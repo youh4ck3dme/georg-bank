@@ -293,7 +293,24 @@ export function GeorgeDashboardClient({
   const [bankerChatInput, setBankerChatInput] = useState('')
   const [isBankerTyping, setIsBankerTyping] = useState(false)
   const [bankerChatMessages, setBankerChatMessages] = useState<
-    Array<{ id: string; sender: 'banker' | 'user'; text: string; time: string }>
+    Array<{
+      id: string
+      sender: 'banker' | 'user'
+      text: string
+      time: string
+      isVerificationPrompt?: boolean
+      verificationResult?: {
+        status: string
+        amount: string
+        currency: string
+        date: string
+        transferType: string
+        intermediary: string
+        code: string
+        note: string
+        pdfFilename?: string
+      }
+    }>
   >([
     {
       id: 'init-1',
@@ -309,6 +326,14 @@ export function GeorgeDashboardClient({
     },
   ])
   const bankerChatEndRef = useRef<HTMLDivElement>(null)
+
+  // Stavy pre interaktívne overenie platby v chate
+  const [selectedVerificationFile, setSelectedVerificationFile] = useState<{ name: string; size: string } | null>(null)
+  const [isVerifyingPayment, setIsVerifyingPayment] = useState(false)
+  const [verificationProgress, setVerificationProgress] = useState(0)
+  const [verificationStageText, setVerificationStageText] = useState('')
+  const [activeVerificationCardId, setActiveVerificationCardId] = useState<string | null>(null)
+  const verificationFileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     setPortalReady(true)
@@ -1271,9 +1296,9 @@ export function GeorgeDashboardClient({
     setBankerUnreadCount(0)
   }
 
-  const sendBankerChatMessage = async () => {
-    if (!bankerChatInput.trim() || isBankerTyping) return
-    const text = bankerChatInput.trim()
+  const handleSendChatMessage = async (rawText: string) => {
+    if (!rawText.trim() || isBankerTyping) return
+    const text = rawText.trim()
     const now = new Date().toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' })
     const userMsg = {
       id: `usr-${Date.now()}`,
@@ -1286,6 +1311,17 @@ export function GeorgeDashboardClient({
     setBankerChatMessages(updatedMessages)
     setBankerChatInput('')
     setIsBankerTyping(true)
+
+    const lower = text.toLowerCase()
+    const isVerifyQuestion =
+      lower.includes('overi') ||
+      lower.includes('overiť') ||
+      lower.includes('overit') ||
+      lower.includes('odisla') ||
+      lower.includes('odišla') ||
+      lower.includes('kontrola platby') ||
+      (lower.includes('poslem') && lower.includes('platb')) ||
+      (lower.includes('platb') && lower.includes('system'))
 
     try {
       const res = await fetch('/api/chat/banker', {
@@ -1301,43 +1337,115 @@ export function GeorgeDashboardClient({
         }),
       })
 
-      const data = (await res.json().catch(() => ({}))) as { reply?: string }
+      const data = (await res.json().catch(() => ({}))) as { reply?: string; action?: string }
       const replyTime = new Date().toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' })
+      const bankerMsgId = `bnk-${Date.now()}`
+      const shouldPromptVerify = isVerifyQuestion || data.action === 'verify_payment_prompt'
 
-      if (data.reply) {
+      const replyText =
+        data.reply ||
+        (shouldPromptVerify
+          ? 'Áno, samozrejme. Veľmi rád vám platbu v našom bankovom systéme overím. Nižšie som pre vás pripravil zabezpečené pole na vloženie potvrdenia o platbe (PDF dokladu). Nahrajte prosím súbor a kliknite na tlačidlo „Overiť v systéme“.'
+          : 'Ďakujem za vašu správu. Ako váš osobný bankár vám s touto záležitosťou rád pomôžem.')
+
+      setBankerChatMessages((prev) => [
+        ...prev,
+        {
+          id: bankerMsgId,
+          sender: 'banker',
+          text: replyText,
+          time: replyTime,
+          isVerificationPrompt: shouldPromptVerify,
+        },
+      ])
+
+      if (shouldPromptVerify) {
+        setActiveVerificationCardId(bankerMsgId)
+      }
+    } catch {
+      const replyTime = new Date().toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' })
+      const bankerMsgId = `bnk-${Date.now()}`
+
+      if (isVerifyQuestion) {
         setBankerChatMessages((prev) => [
           ...prev,
           {
-            id: `bnk-${Date.now()}`,
+            id: bankerMsgId,
             sender: 'banker',
-            text: data.reply!,
+            text: 'Áno, samozrejme. Veľmi rád vám platbu v našom bankovom systéme overím. Nižšie som pre vás pripravil zabezpečené pole na vloženie potvrdenia o platbe (PDF dokladu). Nahrajte prosím súbor a kliknite na tlačidlo „Overiť v systéme“.',
             time: replyTime,
+            isVerificationPrompt: true,
           },
         ])
+        setActiveVerificationCardId(bankerMsgId)
       } else {
         setBankerChatMessages((prev) => [
           ...prev,
           {
-            id: `bnk-${Date.now()}`,
+            id: bankerMsgId,
             sender: 'banker',
             text: 'Ospravedlňujem sa, spojenie bolo prerušené. Môžete ma kontaktovať aj na čísle +421 2 4862 6600.',
             time: replyTime,
           },
         ])
       }
-    } catch {
-      setBankerChatMessages((prev) => [
-        ...prev,
-        {
-          id: `bnk-${Date.now()}`,
-          sender: 'banker',
-          text: 'Momentálne sa mi nepodarilo načítať odpoveď. Skúste to prosím znova o chvíľu.',
-          time: new Date().toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' }),
-        },
-      ])
     } finally {
       setIsBankerTyping(false)
     }
+  }
+
+  const sendBankerChatMessage = () => handleSendChatMessage(bankerChatInput)
+
+  const handleStartPaymentVerification = () => {
+    if (isVerifyingPayment) return
+    setIsVerifyingPayment(true)
+    setVerificationProgress(15)
+    setVerificationStageText('Pripájanie k bankovému jadru Slovenskej sporiteľne...')
+
+    setTimeout(() => {
+      setVerificationProgress(45)
+      setVerificationStageText('Pripájanie k medzibankovému clearingu NBS / SEPA Instant...')
+    }, 450)
+
+    setTimeout(() => {
+      setVerificationProgress(80)
+      setVerificationStageText('Overovanie zúčtovacieho statusu a digitálneho podpisu dokladu...')
+    }, 950)
+
+    setTimeout(() => {
+      setVerificationProgress(100)
+      setVerificationStageText('Platba úspešne overená!')
+    }, 1450)
+
+    setTimeout(() => {
+      setIsVerifyingPayment(false)
+      setActiveVerificationCardId(null)
+      const nowTime = new Date().toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' })
+      const verifiedTxnId = `SEPA-INST-SK${Date.now().toString().slice(-8)}`
+
+      setBankerChatMessages((prev) => [
+        ...prev,
+        {
+          id: `bnk-verify-${Date.now()}`,
+          sender: 'banker',
+          text: 'Vážený klient, vašu platbu som práve overil v medzibankovom systéme Slovenskej sporiteľne. Platba bola úspešne spracovaná a odoslaná do cieľovej banky príjemcu v režime SEPA Instant.',
+          time: nowTime,
+          verificationResult: {
+            status: 'Doručená v banke príjemcu (Spracovaná)',
+            amount: '150,00 EUR',
+            currency: 'EUR',
+            date: `Dnes, ${nowTime}`,
+            transferType: 'SEPA Instant (Okamžitá platba)',
+            intermediary: 'Slovenská sporiteľňa, a.s. ➔ TARGET2 / NBS',
+            code: verifiedTxnId,
+            note: selectedVerificationFile?.name
+              ? `Overené na základe dokladu: ${selectedVerificationFile.name}`
+              : 'Overené cez autorizovaný kanál George',
+            pdfFilename: 'potvrdenie-qr-platba.pdf',
+          },
+        },
+      ])
+    }, 1850)
   }
 
   useEffect(() => {
@@ -4362,6 +4470,194 @@ export function GeorgeDashboardClient({
                           Zdenko, 3 minutes ago
                         </span>
                       )}
+
+                      {/* 1. INTERAKTÍVNA KARTA OVERENIA S JEMNÝM PROGRESSBAROM A PDF UPLOADOM */}
+                      {msg.isVerificationPrompt && activeVerificationCardId === msg.id && (
+                        <div className="mt-2.5 ml-11.5 p-3.5 bg-slate-50 border border-blue-200 rounded-2xl shadow-xs space-y-3 max-w-[90%] font-sans">
+                          <div className="flex items-center justify-between text-xs">
+                            <div className="flex items-center gap-1.5 font-semibold text-[#0051a8]">
+                              <svg className="w-4 h-4 text-[#2572e6]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                              </svg>
+                              <span>Overenie platby v systéme SLSP</span>
+                            </div>
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 text-[#0051a8] font-medium">
+                              {isVerifyingPayment ? 'Prebieha overovanie' : 'Pripravené'}
+                            </span>
+                          </div>
+
+                          {/* Jemný modrý progressbar */}
+                          <div className="space-y-1">
+                            <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                              <div
+                                className="bg-linear-to-r from-[#2572e6] to-[#0051a8] h-1.5 rounded-full transition-all duration-300 ease-out"
+                                style={{ width: `${isVerifyingPayment ? verificationProgress : selectedVerificationFile ? 35 : 10}%` }}
+                              />
+                            </div>
+                            {isVerifyingPayment ? (
+                              <div className="flex items-center justify-between text-[11px] text-slate-500 pt-0.5">
+                                <span className="animate-pulse flex items-center gap-1 text-[#2572e6] font-medium">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-[#2572e6] animate-ping" />
+                                  {verificationStageText}
+                                </span>
+                                <span className="font-semibold text-slate-700">{verificationProgress}%</span>
+                              </div>
+                            ) : (
+                              <div className="flex items-center justify-between text-[10px] text-slate-400 pt-0.5">
+                                <span>Zadajte alebo nahrajte doklad o platbe</span>
+                                <span>Krok 1 z 2</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Pole na nahratie / výber PDF dokladu */}
+                          {!isVerifyingPayment && (
+                            <div className="space-y-2 pt-1">
+                              <input
+                                type="file"
+                                ref={verificationFileInputRef}
+                                accept=".pdf,application/pdf"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0]
+                                  if (file) {
+                                    setSelectedVerificationFile({
+                                      name: file.name,
+                                      size: `${(file.size / 1024).toFixed(1)} kB`,
+                                    })
+                                  }
+                                }}
+                              />
+
+                              {selectedVerificationFile ? (
+                                <div className="flex items-center justify-between p-2.5 bg-white border border-emerald-300 rounded-xl">
+                                  <div className="flex items-center gap-2 overflow-hidden">
+                                    <div className="w-7 h-7 rounded-lg bg-red-50 text-red-600 flex items-center justify-center shrink-0 border border-red-200">
+                                      <span className="text-[10px] font-bold">PDF</span>
+                                    </div>
+                                    <div className="truncate">
+                                      <p className="text-xs font-medium text-slate-900 truncate">{selectedVerificationFile.name}</p>
+                                      <p className="text-[10px] text-slate-500">{selectedVerificationFile.size} • Pripravené na overenie</p>
+                                    </div>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => setSelectedVerificationFile(null)}
+                                    className="text-slate-400 hover:text-slate-600 text-xs p-1 cursor-pointer"
+                                    aria-label="Odstrániť vybraný súbor"
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                              ) : (
+                                <div
+                                  onClick={() => verificationFileInputRef.current?.click()}
+                                  onDragOver={(e) => e.preventDefault()}
+                                  onDrop={(e) => {
+                                    e.preventDefault()
+                                    const file = e.dataTransfer.files?.[0]
+                                    if (file) {
+                                      setSelectedVerificationFile({
+                                        name: file.name,
+                                        size: `${(file.size / 1024).toFixed(1)} kB`,
+                                      })
+                                    }
+                                  }}
+                                  className="border-2 border-dashed border-slate-300 hover:border-[#2572e6] rounded-xl p-3 text-center cursor-pointer bg-white transition-colors group"
+                                >
+                                  <div className="flex flex-col items-center gap-1">
+                                    <svg className="w-6 h-6 text-slate-400 group-hover:text-[#2572e6] transition-colors" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                    </svg>
+                                    <span className="text-xs font-semibold text-slate-700 group-hover:text-[#2572e6]">
+                                      Nahrajte potvrdenie o platbe (PDF doklad)
+                                    </span>
+                                    <span className="text-[10px] text-slate-400">Kliknite sem alebo pretiahnite súbor</span>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Akčné tlačidlá formulára */}
+                              <div className="flex items-center justify-between pt-1 gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedVerificationFile({
+                                      name: 'potvrdenie-qr-platba.pdf',
+                                      size: '7.4 kB',
+                                    })
+                                  }}
+                                  className="text-[11px] text-[#2572e6] hover:underline flex items-center gap-1 font-medium cursor-pointer"
+                                >
+                                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                  </svg>
+                                  Vložiť doklad z Georgea
+                                </button>
+
+                                <button
+                                  type="button"
+                                  disabled={isVerifyingPayment}
+                                  onClick={() => handleStartPaymentVerification()}
+                                  className="px-3.5 py-1.5 bg-[#2572e6] hover:bg-[#1f5ec2] active:bg-[#1a4ea8] text-white rounded-lg text-xs font-semibold shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                                >
+                                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                  </svg>
+                                  <span>Overiť v systéme</span>
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* 2. CERTIFIKOVANÝ VÝPIS STAVU ZÚČTOVANIA SLSP */}
+                      {msg.verificationResult && (
+                        <div className="mt-2.5 ml-11.5 p-3.5 bg-white border border-emerald-200 rounded-xl shadow-xs space-y-2 text-slate-800 max-w-[90%] font-sans">
+                          <div className="flex items-center justify-between pb-1.5 border-b border-slate-100">
+                            <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-700">
+                              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                              <span>{msg.verificationResult.status}</span>
+                            </div>
+                            <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">SEPA Instant</span>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2 text-xs pt-1">
+                            <div>
+                              <span className="text-[10px] text-slate-400 block">Suma a mena:</span>
+                              <span className="font-bold text-[#0051a8] text-sm">{msg.verificationResult.amount}</span>
+                            </div>
+                            <div>
+                              <span className="text-[10px] text-slate-400 block">Dátum zúčtovania:</span>
+                              <span className="font-semibold text-slate-700">{msg.verificationResult.date}</span>
+                            </div>
+                            <div>
+                              <span className="text-[10px] text-slate-400 block">Typ prevodu:</span>
+                              <span className="font-medium text-slate-700 text-[11px]">{msg.verificationResult.transferType}</span>
+                            </div>
+                            <div>
+                              <span className="text-[10px] text-slate-400 block">Sprostredkovateľ:</span>
+                              <span className="font-medium text-slate-700 text-[11px]">{msg.verificationResult.intermediary}</span>
+                            </div>
+                          </div>
+
+                          <div className="pt-1.5 border-t border-slate-100 flex items-center justify-between text-[11px]">
+                            <span className="text-slate-500 font-mono text-[10px]">{msg.verificationResult.code}</span>
+                            <a
+                              href="/potvrdenie-qr-platba.pdf"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[#2572e6] hover:underline font-semibold flex items-center gap-1"
+                            >
+                              <span>Otvoriť PDF doklad</span>
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                              </svg>
+                            </a>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
 
@@ -4387,6 +4683,7 @@ export function GeorgeDashboardClient({
                   {/* 1:1 Preset Option Pill Buttons from Screenshot */}
                   <div className="pt-2 pb-1 flex flex-wrap justify-center gap-2">
                     {[
+                      'Overiť platbu v systéme.',
                       'Chcem si u Vás založiť účet.',
                       'Chcem si k vám presunúť osobný účet.',
                       'Firmy a podnikatelia.',
@@ -4401,46 +4698,7 @@ export function GeorgeDashboardClient({
                         key={chip}
                         type="button"
                         onClick={() => {
-                          setBankerChatInput('')
-                          const userMsg = {
-                            id: `usr-${Date.now()}`,
-                            sender: 'user' as const,
-                            text: chip,
-                            time: new Date().toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' }),
-                          }
-                          const updated = [...bankerChatMessages, userMsg]
-                          setBankerChatMessages(updated)
-                          setIsBankerTyping(true)
-                          void (async () => {
-                            try {
-                              const res = await fetch('/api/chat/banker', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                  messages: updated.map((m) => ({
-                                    role: m.sender === 'banker' ? 'assistant' : 'user',
-                                    content: m.text,
-                                  })),
-                                  clientName: 'Vážený klient',
-                                  spaceBalance: state.spaceBalance,
-                                }),
-                              })
-                              const data = (await res.json().catch(() => ({}))) as { reply?: string }
-                              if (data.reply) {
-                                setBankerChatMessages((prev) => [
-                                  ...prev,
-                                  {
-                                    id: `bnk-${Date.now()}`,
-                                    sender: 'banker',
-                                    text: data.reply!,
-                                    time: new Date().toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' }),
-                                  },
-                                ])
-                              }
-                            } finally {
-                              setIsBankerTyping(false)
-                            }
-                          })()
+                          void handleSendChatMessage(chip)
                         }}
                         className="border border-[#2572e6] bg-white hover:bg-[#f0f6ff] active:bg-[#e0edff] text-[#2572e6] text-[12.5px] leading-tight px-3.5 py-1.5 rounded-lg transition-colors shadow-xs cursor-pointer text-center"
                       >

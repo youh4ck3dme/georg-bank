@@ -71,7 +71,35 @@ async function runBankerChatRegressionTest() {
     assert.ok(code.includes('Tomášikova 48'), 'george-dashboard-client.tsx must mention Tomášikova 48')
     assert.ok(code.includes('Pobočka otvorená do 16:00'), 'george-dashboard-client.tsx must display branch opening hours')
     assert.ok(code.includes('bg-[#151621]'), 'george-dashboard-client.tsx must use dark mode tokens')
+    assert.ok(code.includes('Overenie platby v systéme SLSP'), 'george-dashboard-client.tsx must contain verification header')
+    assert.ok(code.includes('Overiť v systéme'), 'george-dashboard-client.tsx must contain verify button')
+    assert.ok(code.includes('SEPA Instant'), 'george-dashboard-client.tsx must support SEPA Instant verification')
     console.log('  ✓ UI contract, dark theme tokens and data-testids verified in george-dashboard-client.tsx')
+  }
+
+  // 4. Test POST /api/chat/banker with payment verification request
+  {
+    const req = new Request('http://localhost:3000/api/chat/banker', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messages: [
+          { role: 'user', content: 'poslem vam platbu viete mi ju overit v systeme ci odisla ?' },
+        ],
+        clientName: 'Peter',
+        spaceBalance: 15190.46,
+      }),
+    })
+    const res = await POST(req)
+    assert.strictEqual(res.status, 200)
+    const json = (await res.json()) as { reply: string; action?: string }
+    assert.ok(json.reply.length > 20, 'Reply should be an empathetic helpful answer')
+    assert.strictEqual(json.action, 'verify_payment_prompt', 'Action must trigger verify_payment_prompt')
+    assert.ok(
+      json.reply.toLowerCase().includes('overi') || json.reply.toLowerCase().includes('systém') || json.reply.toLowerCase().includes('doklad'),
+      'Reply should mention verification or document'
+    )
+    console.log('  ✓ Payment verification trigger & action flag verified')
   }
 
   console.log('✅ Banker Chat Regression Test PASSED!')

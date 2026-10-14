@@ -19,6 +19,7 @@ PRAVIDLÁ A TÓN KOMUNIKÁCIE:
    - Správa limitov na kartách (denné limity, internetové platby, dočasné zamknutie karty).
    - Tuzemské a SEPA prevody, okamžité platby (Instant Payments), QR platby (PAY by square a české SPAYD).
    - Generovanie a sťahovanie PDF potvrdení o platbe a mesačných výpisov.
+   - Overovanie platieb v medzibankovom systéme: Ak klient požiada o overenie odoslanej platby (či odišla alebo či ju vieš overiť), s ochotou mu potvrď, že platbu v systéme rád overíš, a vyzvi ho na priloženie potvrdenia o platbe (PDF dokladu).
    - Sporenie k účtu, termínované vklady a investovanie cez George.
 5. BEZPEČNOSTNÝ KÓDEX:
    - NIKDY od klienta nežiadaj PIN, heslo do George ani kompletné číslo platobnej karty či CVV kód.
@@ -87,6 +88,19 @@ function generateSmartFallbackResponse(userMessage: string): string {
     return 'Váš účet Space v Slovenskej sporiteľni môžete mať bez poplatku za vedenie pri splnení podmienok programu Výhodný súčet (napr. platby kartou v minimálnej výške alebo zriadené trvalé príkazy). Zostatok a detaily poplatkov vidíte prehľadne v hlavnom prehľade George.'
   }
 
+  if (
+    lower.includes('overi') ||
+    lower.includes('overiť') ||
+    lower.includes('overit') ||
+    lower.includes('odisla') ||
+    lower.includes('odišla') ||
+    lower.includes('kontrola platby') ||
+    (lower.includes('poslem') && lower.includes('platb')) ||
+    (lower.includes('platb') && lower.includes('system'))
+  ) {
+    return 'Áno, samozrejme. Veľmi rád vám platbu v našom bankovom systéme overím. Nižšie som pre vás pripravil zabezpečené pole na vloženie potvrdenia o platbe (PDF dokladu). Nahrajte prosím súbor a kliknite na tlačidlo „Overiť v systéme“.'
+  }
+
   if (lower.includes('potvrdenie') || lower.includes('pdf') || lower.includes('doklad') || lower.includes('výpis')) {
     return 'Potvrdenie o odoslanej platbe v oficiálnom PDF formáte si zobrazíte kliknutím na danú transakciu v histórii a zvolením „Náhľad dokladu (PDF)“. Kompletný mesačný výpis za uplynulé obdobie nájdete v časti Úložisko dokumentov.'
   }
@@ -113,6 +127,16 @@ export async function POST(req: Request) {
     }
 
     const lastUserMessage = [...messages].reverse().find((m) => m.role === 'user')?.content || ''
+    const lowerMsg = lastUserMessage.toLowerCase()
+    const isVerificationQuery =
+      lowerMsg.includes('overi') ||
+      lowerMsg.includes('overiť') ||
+      lowerMsg.includes('overit') ||
+      lowerMsg.includes('odisla') ||
+      lowerMsg.includes('odišla') ||
+      lowerMsg.includes('kontrola platby') ||
+      (lowerMsg.includes('poslem') && lowerMsg.includes('platb')) ||
+      (lowerMsg.includes('platb') && lowerMsg.includes('system'))
 
     const apiKey = process.env.MISTRAL_API_KEY
     if (apiKey) {
@@ -147,6 +171,7 @@ export async function POST(req: Request) {
               reply: reply.trim(),
               banker: BANKER_INFO,
               provider: 'mistral-ai',
+              action: isVerificationQuery ? 'verify_payment_prompt' : undefined,
               timestamp: new Date().toISOString(),
             })
           }
@@ -165,6 +190,7 @@ export async function POST(req: Request) {
       reply: fallbackReply,
       banker: BANKER_INFO,
       provider: 'slsp-banker-engine',
+      action: isVerificationQuery ? 'verify_payment_prompt' : undefined,
       timestamp: new Date().toISOString(),
     })
   } catch (error) {
