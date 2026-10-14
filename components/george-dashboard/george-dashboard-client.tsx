@@ -276,7 +276,6 @@ export function GeorgeDashboardClient({
   const [isToastVisible, setIsToastVisible] = useState(false)
   const [toastTimeoutId, setToastTimeoutId] = useState<NodeJS.Timeout | null>(null)
 
-  const [contactMessage, setContactMessage] = useState('')
   const [slovenskoNumber, setSlovenskoNumber] = useState('0850 111 888')
   const [zahranicieNumber, setZahranicieNumber] = useState('+421 2 48 62 66')
   const [isLoaded, setIsLoaded] = useState(false)
@@ -287,6 +286,23 @@ export function GeorgeDashboardClient({
   const [previewReceiptData, setPreviewReceiptData] = useState<PaymentConfirmationPdfData | null>(null)
   const [portalReady, setPortalReady] = useState(false)
   const [receiptFormat, setReceiptFormatState] = useState<ReceiptFormat>(() => getReceiptFormat())
+
+  // Banker Chat (Zdenko Biringer - Mistral AI)
+  const [isBankerChatOpen, setIsBankerChatOpen] = useState(false)
+  const [bankerUnreadCount, setBankerUnreadCount] = useState(1)
+  const [bankerChatInput, setBankerChatInput] = useState('')
+  const [isBankerTyping, setIsBankerTyping] = useState(false)
+  const [bankerChatMessages, setBankerChatMessages] = useState<
+    Array<{ id: string; sender: 'banker' | 'user'; text: string; time: string }>
+  >([
+    {
+      id: 'init-1',
+      sender: 'banker',
+      text: 'Dobrý deň! Som Zdenko Biringer, váš osobný bankár v Slovenskej sporiteľni. Ako vám môžem dnes pomôcť s vaším účtom alebo Georgeom?',
+      time: '18:30',
+    },
+  ])
+  const bankerChatEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     setPortalReady(true)
@@ -1244,6 +1260,86 @@ export function GeorgeDashboardClient({
     }
   }
 
+  const openBankerChat = () => {
+    setIsBankerChatOpen(true)
+    setBankerUnreadCount(0)
+  }
+
+  const sendBankerChatMessage = async () => {
+    if (!bankerChatInput.trim() || isBankerTyping) return
+    const text = bankerChatInput.trim()
+    const now = new Date().toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' })
+    const userMsg = {
+      id: `usr-${Date.now()}`,
+      sender: 'user' as const,
+      text,
+      time: now,
+    }
+
+    const updatedMessages = [...bankerChatMessages, userMsg]
+    setBankerChatMessages(updatedMessages)
+    setBankerChatInput('')
+    setIsBankerTyping(true)
+
+    try {
+      const res = await fetch('/api/chat/banker', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: updatedMessages.map((m) => ({
+            role: m.sender === 'banker' ? 'assistant' : 'user',
+            content: m.text,
+          })),
+          clientName: 'Vážený klient',
+          spaceBalance: state.spaceBalance,
+        }),
+      })
+
+      const data = (await res.json().catch(() => ({}))) as { reply?: string }
+      const replyTime = new Date().toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' })
+
+      if (data.reply) {
+        setBankerChatMessages((prev) => [
+          ...prev,
+          {
+            id: `bnk-${Date.now()}`,
+            sender: 'banker',
+            text: data.reply!,
+            time: replyTime,
+          },
+        ])
+      } else {
+        setBankerChatMessages((prev) => [
+          ...prev,
+          {
+            id: `bnk-${Date.now()}`,
+            sender: 'banker',
+            text: 'Ospravedlňujem sa, spojenie bolo prerušené. Môžete ma kontaktovať aj na čísle +421 2 4862 6600.',
+            time: replyTime,
+          },
+        ])
+      }
+    } catch {
+      setBankerChatMessages((prev) => [
+        ...prev,
+        {
+          id: `bnk-${Date.now()}`,
+          sender: 'banker',
+          text: 'Momentálne sa mi nepodarilo načítať odpoveď. Skúste to prosím znova o chvíľu.',
+          time: new Date().toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' }),
+        },
+      ])
+    } finally {
+      setIsBankerTyping(false)
+    }
+  }
+
+  useEffect(() => {
+    if (isBankerChatOpen) {
+      bankerChatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [bankerChatMessages, isBankerChatOpen, isBankerTyping])
+
   const showToast = (message: string) => {
     setToastMessage(message)
     setIsToastVisible(true)
@@ -1540,15 +1636,6 @@ export function GeorgeDashboardClient({
 
   const activateCashback = (brandName: string) => {
     showToast(`Ponuka "${brandName}" bola aktivovaná. Pri ďalšej platbe kartou dostanete cashback!`)
-  }
-
-  const sendContactMessage = () => {
-    if (!contactMessage.trim()) {
-      showToast('Zadajte najprv text správy.')
-      return
-    }
-    showToast('Vaša správa bola bezpečne odoslaná na klientsku podporu.')
-    setContactMessage('')
   }
 
   const resetSandbox = () => {
@@ -2988,40 +3075,150 @@ export function GeorgeDashboardClient({
           </div>
 
           {/*==================================================
-              ZÁLOŽKA 4: KONTAKTY
+              ZÁLOŽKA 4: KONTAKTY (OSOBNÝ BANKÁR & CHAT)
               ==================================================*/}
           <div id="content-kontakty" className={`tab-content ${state.activeTab === 'kontakty' ? 'block' : 'hidden'}`}>
             <header className="px-6 pt-[max(1.25rem,env(safe-area-inset-top))] pb-4">
-              <h1 className="text-xl font-bold text-white">Kontakty</h1>
-              <p className="text-xs text-slate-400">Sme tu pre vás 24/7</p>
+              <h1 className="text-2xl font-bold text-white tracking-tight">Kontakty</h1>
             </header>
 
-            <main className="px-5 space-y-4">
-              <div className="bg-[#151621] rounded-[18px] p-5 border border-slate-800/40 flex items-center justify-between">
-                <div>
-                  <h3 className="text-sm font-bold text-slate-200">Klientska linka George</h3>
-                  <p className="text-xs text-slate-400 mt-1">Slovensko: {slovenskoNumber}</p>
-                  <p className="text-[10px] text-slate-500 mt-0.5">Zo zahraničia: {zahranicieNumber}</p>
+            <main className="px-5 space-y-4 pb-28">
+              {/* KARTA 1: OSOBNÝ BANKÁR */}
+              <div className="bg-[#151621] rounded-3xl p-5 border border-slate-800/60 shadow-lg space-y-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 block mb-0.5">Osobný bankár</span>
+                    <h2 className="text-lg font-bold text-white tracking-tight">Zdenko Biringer</h2>
+                    <p className="text-xs text-slate-400 mt-0.5">Tomášikova 48</p>
+                    <p className="text-xs text-slate-400">832 37 Bratislava</p>
+                    
+                    {/* Badge: Otvorená pobočka */}
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-[11px] font-semibold mt-2.5 border border-emerald-500/20">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      <span>Pobočka otvorená do 16:00</span>
+                    </div>
+                  </div>
+
+                  {/* Kruhový modrý Avatar */}
+                  <div className="w-12 h-12 rounded-full bg-[#327bf5] text-white flex items-center justify-center font-bold text-base shadow-md shadow-blue-900/30 shrink-0">
+                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                    </svg>
+                  </div>
                 </div>
-                <a href={`tel:${slovenskoNumber.replace(/\s+/g, '')}`} className="w-10 h-10 rounded-full bg-[#327bf5]/20 text-[#327bf5] flex items-center justify-center hover:bg-[#327bf5]/30 active:scale-90 transition-all">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.94.725l.548 2.2a1 1 0 01-.321.988l-1.305.98a10.582 10.582 0 004.872 4.872l.98-1.305a1 1 0 01.988-.321l2.2.548a1 1 0 01.725.94V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                  </svg>
-                </a>
+
+                {/* Tlačidlá: Poslať správu a Dohodnúť stretnutie */}
+                <div className="space-y-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={openBankerChat}
+                    data-testid="contact-send-message-btn"
+                    className="w-full py-3 rounded-2xl bg-[#1a233a] hover:bg-[#222f50] text-[#327bf5] hover:text-blue-400 font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-[0.99] border border-blue-900/30 cursor-pointer"
+                  >
+                    <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    <span>Poslať správu</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      showToast('Termín na pobočke Tomášikova 48 si môžete rezervovať v chate so Zdenkom.')
+                      openBankerChat()
+                    }}
+                    className="w-full py-3 rounded-2xl bg-[#1a233a] hover:bg-[#222f50] text-[#327bf5] hover:text-blue-400 font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-[0.99] border border-blue-900/30 cursor-pointer"
+                  >
+                    <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <span>Dohodnúť stretnutie</span>
+                  </button>
+                </div>
               </div>
 
-              <div className="bg-[#151621] rounded-[18px] p-5 border border-slate-800/40">
-                <h3 className="text-sm font-bold text-slate-200 mb-3">Napíšte nám správu</h3>
-                <textarea
-                  id="contact-message"
-                  placeholder="Ako vám dnes môžeme pomôcť?"
-                  rows={3}
-                  value={contactMessage}
-                  onChange={(e) => setContactMessage(e.target.value)}
-                  className="w-full bg-[#0a0a10] border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-blue-500 transition-colors resize-none"
-                />
-                <button onClick={sendContactMessage} className="w-full bg-[#327bf5] hover:bg-blue-600 text-white font-semibold py-2.5 rounded-xl text-xs mt-3 transition-colors active:scale-95">
-                  Odoslať správu cez George kľúč
+              {/* KARTA 2: KLIENTSKE CENTRUM */}
+              <div className="bg-[#151621] rounded-3xl p-5 border border-slate-800/60 shadow-lg space-y-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h3 className="text-base font-bold text-white">Klientske centrum</h3>
+                    <p className="text-xs text-slate-400 mt-0.5">Spojte sa s nami.</p>
+                  </div>
+                  <div className="w-10 h-10 rounded-full bg-slate-800/80 text-slate-300 flex items-center justify-center shrink-0">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 100-6 3 3 0 000 6z" />
+                    </svg>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <a
+                    href={`tel:${slovenskoNumber.replace(/\s+/g, '')}`}
+                    className="w-full py-3 rounded-2xl bg-[#1b1c28] hover:bg-slate-800 text-white font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-[0.99] border border-slate-700/60"
+                  >
+                    <svg className="w-4 h-4 text-[#327bf5]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.94.725l.548 2.2a1 1 0 01-.321.988l-1.305.98a10.582 10.582 0 004.872 4.872l.98-1.305a1 1 0 01.988-.321l2.2.548a1 1 0 01.725.94V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                    </svg>
+                    <span>Zavolať ({slovenskoNumber})</span>
+                  </a>
+
+                  <a
+                    href={`tel:${zahranicieNumber.replace(/\s+/g, '')}`}
+                    className="w-full py-2.5 rounded-2xl bg-transparent hover:bg-slate-800/40 text-slate-400 hover:text-slate-200 font-medium text-xs flex items-center justify-center gap-2 transition-all border border-slate-800/60"
+                  >
+                    <span>Zo zahraničia: {zahranicieNumber}</span>
+                  </a>
+                </div>
+              </div>
+
+              {/* KARTA 3: DORUČENÉ SPRÁVY */}
+              <div className="bg-[#151621] rounded-3xl p-5 border border-slate-800/60 shadow-lg space-y-3">
+                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Doručené správy</h3>
+
+                {/* Riadok 1: Messenger */}
+                <button
+                  type="button"
+                  onClick={openBankerChat}
+                  className="w-full flex items-center justify-between p-3 rounded-2xl hover:bg-slate-800/50 transition-colors text-left group cursor-pointer"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-[#327bf5] flex items-center justify-center shrink-0">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <span className="text-sm font-semibold text-white group-hover:text-[#327bf5] transition-colors">Messenger</span>
+                  </div>
+                  {bankerUnreadCount > 0 ? (
+                    <span className="w-5 h-5 rounded-full bg-red-500 text-white text-[11px] font-bold flex items-center justify-center">
+                      {bankerUnreadCount}
+                    </span>
+                  ) : (
+                    <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                  )}
+                </button>
+
+                <div className="border-t border-slate-800/40" />
+
+                {/* Riadok 2: Úložisko dokumentov */}
+                <button
+                  type="button"
+                  onClick={() => showToast('Úložisko dokumentov: Všetky vaše PDF výpisy sú archivované v bezpečí.')}
+                  className="w-full flex items-center justify-between p-3 rounded-2xl hover:bg-slate-800/50 transition-colors text-left group cursor-pointer"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-slate-800 text-slate-300 flex items-center justify-center shrink-0">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                      </svg>
+                    </div>
+                    <span className="text-sm font-semibold text-white group-hover:text-slate-200 transition-colors">Úložisko dokumentov</span>
+                  </div>
+                  <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
                 </button>
               </div>
             </main>
@@ -3107,17 +3304,25 @@ export function GeorgeDashboardClient({
 
           {/* Záložka 4: Kontakty */}
           <button
-            onClick={() => switchTab('kontakty')}
+            onClick={() => {
+              switchTab('kontakty')
+              setBankerUnreadCount(0)
+            }}
             id="tab-kontakty"
             className="flex flex-col items-center focus:outline-none transition-all duration-300"
           >
-            <div
-              id="icon-container-kontakty"
-              className={state.activeTab === 'kontakty' ? 'bg-[#0c244f] px-5 py-1.5 rounded-full text-[#327bf5] flex items-center justify-center transition-all duration-200' : 'px-5 py-1.5 flex items-center justify-center text-[#7f8596] hover:text-slate-200 transition-all duration-200'}
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-              </svg>
+            <div className="relative">
+              <div
+                id="icon-container-kontakty"
+                className={state.activeTab === 'kontakty' ? 'bg-[#0c244f] px-5 py-1.5 rounded-full text-[#327bf5] flex items-center justify-center transition-all duration-200' : 'px-5 py-1.5 flex items-center justify-center text-[#7f8596] hover:text-slate-200 transition-all duration-200'}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+              </div>
+              {bankerUnreadCount > 0 && (
+                <span className="absolute -top-0.5 right-1 w-2.5 h-2.5 rounded-full bg-red-500 ring-2 ring-[#0a0a10]" />
+              )}
             </div>
             <span
               id="text-kontakty"
@@ -4024,6 +4229,223 @@ export function GeorgeDashboardClient({
                 </div>
               </div>
             </div>
+          )}
+
+          {/* Floating Action Button (FAB) - Osobný bankár Zdenko Biringer */}
+          {!isBankerChatOpen && (
+            <div className="fixed bottom-22 sm:bottom-8 right-4 sm:right-6 z-45 flex items-center gap-2">
+              <button
+                type="button"
+                data-testid="banker-chat-fab"
+                onClick={openBankerChat}
+                className="group relative flex items-center gap-2.5 px-4 py-3 bg-gradient-to-r from-[#171825] to-[#1a233a] hover:from-[#1c1e30] hover:to-[#222f50] text-white rounded-full shadow-2xl border border-blue-500/30 hover:border-blue-500/60 transition-all duration-200 active:scale-95 cursor-pointer"
+                aria-label="Otvoriť chat s osobným bankárom"
+              >
+                {/* Avatar / Ikona */}
+                <div className="relative w-8 h-8 rounded-full bg-[#327bf5] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-md">
+                  <span>ZB</span>
+                  <span className="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-emerald-400 ring-2 ring-[#171825] animate-pulse" />
+                </div>
+                <div className="text-left hidden xs:block sm:block">
+                  <div className="text-xs font-bold leading-tight flex items-center gap-1.5">
+                    <span>Zdenko Biringer</span>
+                    <span className="text-[10px] text-emerald-400 font-normal">● Online</span>
+                  </div>
+                  <div className="text-[10px] text-slate-400 leading-tight">Osobný bankár</div>
+                </div>
+
+                {bankerUnreadCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 px-1 rounded-full bg-red-500 text-white text-[11px] font-bold flex items-center justify-center ring-2 ring-[#0a0a10] shadow-md animate-bounce">
+                    {bankerUnreadCount}
+                  </span>
+                )}
+              </button>
+            </div>
+          )}
+
+          {/* Live Chat Modal / Window - Osobný bankár Zdenko Biringer */}
+          {isBankerChatOpen && (
+            <>
+              {/* Backdrop for mobile */}
+              <div
+                className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 sm:hidden"
+                onClick={() => setIsBankerChatOpen(false)}
+              />
+
+              <div
+                data-testid="banker-chat-modal"
+                className="fixed bottom-0 sm:bottom-8 right-0 sm:right-6 w-full sm:w-[420px] h-[85vh] sm:h-[620px] max-h-[85vh] sm:max-h-[620px] bg-[#12131b] border border-slate-800 rounded-t-3xl sm:rounded-3xl shadow-2xl z-50 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-200"
+              >
+                {/* Header */}
+                <div className="bg-gradient-to-r from-[#171825] to-[#12131b] border-b border-slate-800 px-4 py-3 flex items-center justify-between shrink-0">
+                  <div className="flex items-center gap-3">
+                    <div className="relative w-10 h-10 rounded-full bg-[#327bf5] text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-md shadow-blue-900/30">
+                      <span>ZB</span>
+                      <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-[#12131b] animate-pulse" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-bold text-white text-sm">Ing. Zdenko Biringer</h3>
+                        <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                          Online
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-400">
+                        Osobný bankár • Tomášikova 48, BA
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1">
+                    <a
+                      href="tel:+421248626600"
+                      title="Zavolať bankárovi"
+                      className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/80 transition-colors"
+                    >
+                      <svg className="w-4.5 h-4.5 text-[#327bf5]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.94.725l.548 2.2a1 1 0 01-.321.988l-1.305.98a10.582 10.582 0 004.872 4.872l.98-1.305a1 1 0 01.988-.321l2.2.548a1 1 0 01.725.94V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                      </svg>
+                    </a>
+                    <button
+                      type="button"
+                      data-testid="banker-chat-close-btn"
+                      onClick={() => setIsBankerChatOpen(false)}
+                      className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/80 transition-colors cursor-pointer"
+                      aria-label="Zavrieť chat"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Sub-header info bar */}
+                <div className="px-4 py-1.5 bg-[#0e0f16] border-b border-slate-800/60 flex items-center justify-between text-[11px] text-slate-400">
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                    Pobočka otvorená do 16:00
+                  </span>
+                  <span className="text-slate-500 text-[10px]">Mistral AI • SLSP Secure</span>
+                </div>
+
+                {/* Messages Body */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-3.5 bg-[#0a0a10]/60">
+                  {/* Bank info box */}
+                  <div className="p-3 rounded-2xl bg-[#151621] border border-slate-800 text-center space-y-1">
+                    <p className="text-[11px] font-bold text-slate-300">
+                      Slovenská sporiteľňa • Prémiové bankovníctvo
+                    </p>
+                    <p className="text-[10px] text-slate-400">
+                      Komunikujete priamo so svojím prideleným bankárom. Všetky informácie o vašich účtoch a platbách sú chránené bankovým tajomstvom.
+                    </p>
+                  </div>
+
+                  {bankerChatMessages.map((msg) => (
+                    <div
+                      key={msg.id}
+                      className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}
+                    >
+                      <div className={`flex items-start gap-2 max-w-[88%] ${msg.sender === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                        {msg.sender === 'banker' && (
+                          <div className="w-7 h-7 rounded-full bg-[#327bf5] text-white flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5 shadow">
+                            ZB
+                          </div>
+                        )}
+                        <div
+                          className={`px-4 py-2.5 text-xs sm:text-sm rounded-2xl leading-relaxed whitespace-pre-wrap break-words shadow-sm ${
+                            msg.sender === 'user'
+                              ? 'bg-[#327bf5] text-white rounded-tr-xs'
+                              : 'bg-[#181926] text-slate-200 border border-slate-800 rounded-tl-xs'
+                          }`}
+                        >
+                          {msg.text}
+                        </div>
+                      </div>
+                      <span className={`text-[10px] text-slate-500 mt-1 ${msg.sender === 'user' ? 'pr-2' : 'pl-9'}`}>
+                        {msg.time}
+                      </span>
+                    </div>
+                  ))}
+
+                  {/* Typing Indicator */}
+                  {isBankerTyping && (
+                    <div className="flex items-start gap-2 max-w-[85%]">
+                      <div className="w-7 h-7 rounded-full bg-[#327bf5] text-white flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
+                        ZB
+                      </div>
+                      <div className="px-4 py-3 bg-[#181926] border border-slate-800 rounded-2xl rounded-tl-xs flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-[#327bf5] animate-bounce" style={{ animationDelay: '0ms' }} />
+                        <span className="w-2 h-2 rounded-full bg-[#327bf5] animate-bounce" style={{ animationDelay: '150ms' }} />
+                        <span className="w-2 h-2 rounded-full bg-[#327bf5] animate-bounce" style={{ animationDelay: '300ms' }} />
+                        <span className="text-[11px] text-slate-400 ml-1.5">Zdenko píše...</span>
+                      </div>
+                    </div>
+                  )}
+
+                  <div ref={bankerChatEndRef} />
+                </div>
+
+                {/* Suggestions / Chips */}
+                <div className="px-3 py-2 bg-[#0e0f16] border-t border-slate-800/60 overflow-x-auto no-scrollbar flex items-center gap-1.5 shrink-0">
+                  {[
+                    'Ako zmeniť denný limit?',
+                    'Rezervovať stretnutie',
+                    'Potvrdenie o platbe v PDF',
+                    'Aké mám poplatky za účet?',
+                  ].map((chip) => (
+                    <button
+                      key={chip}
+                      type="button"
+                      onClick={() => {
+                        setBankerChatInput(chip)
+                      }}
+                      className="whitespace-nowrap px-2.5 py-1 rounded-full bg-[#181926] hover:bg-slate-800 text-[11px] text-slate-300 hover:text-white border border-slate-700/60 transition-colors shrink-0 cursor-pointer"
+                    >
+                      {chip}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Footer Input */}
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault()
+                    void sendBankerChatMessage()
+                  }}
+                  className="p-3 bg-[#12131b] border-t border-slate-800 shrink-0"
+                >
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      data-testid="banker-chat-input"
+                      placeholder="Napíšte správu Zdenkovi..."
+                      value={bankerChatInput}
+                      onChange={(e) => setBankerChatInput(e.target.value)}
+                      disabled={isBankerTyping}
+                      className="flex-1 bg-[#0a0a10] border border-slate-800 focus:border-blue-500 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none transition-colors"
+                    />
+                    <button
+                      type="submit"
+                      data-testid="banker-chat-send-btn"
+                      disabled={!bankerChatInput.trim() || isBankerTyping}
+                      className="w-10 h-10 rounded-xl bg-[#327bf5] hover:bg-blue-600 disabled:opacity-40 disabled:hover:bg-[#327bf5] text-white flex items-center justify-center transition-all shrink-0 cursor-pointer shadow-md shadow-blue-900/30"
+                      aria-label="Odoslať správu"
+                    >
+                      <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 19V5m0 0l-7 7m7-7l7 7" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div className="mt-1.5 flex items-center justify-center gap-1 text-[10px] text-slate-500">
+                    <svg className="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                    <span>Zabezpečená banková komunikácia George AI</span>
+                  </div>
+                </form>
+              </div>
+            </>
           )}
           </div>,
           document.body

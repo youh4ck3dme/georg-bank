@@ -36,6 +36,7 @@ const allUnitTests: TestItem[] = [
   { id: 'payment-fx-smoke', name: 'Payment Smoke Test & Live Currency Conversion Flow', category: 'Banking & Limits', file: './payment-fx-conversion-smoke.test.ts' },
   { id: 'qr-multi-currency-flow', name: 'QR Scan & Dual Payment Flow (EUR & CZK on Random IBANs)', category: 'Banking & Limits', file: './qr-multi-currency-flow.regression.test.ts' },
   { id: 'transaction-status', name: 'Transaction Status Translation (completed ➔ Spracovaná)', category: 'Banking & Limits', file: './transaction-status.regression.test.ts' },
+  { id: 'banker-chat', name: 'Personal Banker Live Chat & Mistral API (Zdenko Biringer)', category: 'Banking & Limits', file: './banker-chat.regression.test.ts' },
 
   // 4. Receipts & PDFs
   { id: 'statement-generator', name: 'Monthly Statement Generator Engine', category: 'Receipts & PDFs', file: './statement-generator.test.ts' },
