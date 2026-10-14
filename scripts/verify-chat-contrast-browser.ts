@@ -1,5 +1,4 @@
 import { chromium } from 'playwright'
-import fs from 'fs'
 import path from 'path'
 
 const TARGET_URL = process.env.TEST_TARGET_URL || 'https://gro-kan-1040062317673.europe-west3.run.app'
@@ -12,6 +11,21 @@ async function runBrowserContrastTest() {
     viewport: { width: 420, height: 860 }, // Mobile viewport (1:1 app feel)
     userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15',
   })
+
+  // Nastavíme platný guest session cookie, aby proxy povolila prístup na /dashboard3
+  await context.addCookies([
+    {
+      name: 'access_granted',
+      value: 'guest_session_verified',
+      url: TARGET_URL,
+    },
+    {
+      name: 'app_session',
+      value: 'guest_session_verified',
+      url: TARGET_URL,
+    },
+  ])
+
   const page = await context.newPage()
 
   try {
