@@ -79,7 +79,7 @@ export function DashboardHeader({ account }: DashboardHeaderProps) {
   const handleItemClick = (item: string) => {
     setIsOpen(false)
     if (item === 'history') {
-      router.push('/dashboard2')
+      router.push('/dashboard3')
     } else if (item === 'new-payment') {
       window.dispatchEvent(new CustomEvent('open-transfer-modal'))
     } else if (item === 'payment-orders') {
@@ -91,7 +91,7 @@ export function DashboardHeader({ account }: DashboardHeaderProps) {
     } else if (item === 'statements') {
       router.push('/dashboard/statements/generator')
     } else if (item === 'settings') {
-      router.push('/dashboard2')
+      router.push('/dashboard3')
     }
   }
 

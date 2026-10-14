@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
       approved: true,
       superadmin: true,
       requestId,
-      redirectUrl: '/dashboard2',
+      redirectUrl: '/dashboard3',
       message: 'Superadmin prístup aktivovaný. Neobmedzené platby a generovanie.',
     })
 

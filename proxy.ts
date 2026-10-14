@@ -317,10 +317,10 @@ export function proxy(request: NextRequest) {
   }
 
 
-  // Prefer dashboard2 — block opening the legacy /dashboard shell.
+  // Prefer dashboard3 — block opening the legacy /dashboard shell.
   if (pathname === '/dashboard' || pathname === '/dashboard/') {
     const url = request.nextUrl.clone()
-    url.pathname = '/dashboard2'
+    url.pathname = '/dashboard3'
     url.search = search
     return addSecurityHeaders(NextResponse.redirect(url))
   }
@@ -355,10 +355,10 @@ export function proxy(request: NextRequest) {
       gateUrl.search = ''
       const redirectTarget = `${pathname}${search}`
       if (redirectTarget !== '/') {
-        // Normalize legacy landing to dashboard2 when bouncing via gate
+        // Normalize legacy landing to dashboard3 when bouncing via gate
         const from =
           redirectTarget === '/dashboard' || redirectTarget.startsWith('/dashboard?')
-            ? '/dashboard2'
+            ? '/dashboard3'
             : redirectTarget
         gateUrl.searchParams.set('from', from)
       }
@@ -375,10 +375,10 @@ export function proxy(request: NextRequest) {
   const guestUrl = request.nextUrl.clone()
   guestUrl.pathname = '/api/auth/guest'
   guestUrl.search = ''
-  const rawTarget = pathname === '/' ? '/dashboard2' : `${pathname}${search}`
+  const rawTarget = pathname === '/' ? '/dashboard3' : `${pathname}${search}`
   const target =
     rawTarget === '/dashboard' || rawTarget.startsWith('/dashboard?')
-      ? '/dashboard2'
+      ? '/dashboard3'
       : rawTarget
   guestUrl.searchParams.set('from', target)
 

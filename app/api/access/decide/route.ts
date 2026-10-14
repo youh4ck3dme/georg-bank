@@ -18,7 +18,7 @@ function decidePageHtml(message: string, ok: boolean, allowEnter = false): strin
   const actionBtn = (ok && allowEnter)
     ? `
     <div style="margin-top:24px;">
-      <a href="/dashboard2" style="display:inline-block;padding:14px 28px;background:#179f42;color:#ffffff;text-decoration:none;border-radius:12px;font-weight:bold;font-size:16px;box-shadow:0 4px 14px rgba(23,159,66,0.4);letter-spacing:0.3px;">
+      <a href="/dashboard3" style="display:inline-block;padding:14px 28px;background:#179f42;color:#ffffff;text-decoration:none;border-radius:12px;font-weight:bold;font-size:16px;box-shadow:0 4px 14px rgba(23,159,66,0.4);letter-spacing:0.3px;">
         Vstúpiť do aplikácie George →
       </a>
       <p style="font-size:12px;color:#94a3b8;margin-top:12px;">Presmerovanie prebehne automaticky o <span id="sec">3</span> s...</p>
@@ -31,7 +31,7 @@ function decidePageHtml(message: string, ok: boolean, allowEnter = false): strin
         if (el) el.textContent = s;
         if (s <= 0) {
           clearInterval(timer);
-          window.location.href = '/dashboard2';
+          window.location.href = '/dashboard3';
         }
       }, 1000);
     </script>`

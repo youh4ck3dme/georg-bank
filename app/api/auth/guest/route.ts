@@ -57,7 +57,7 @@ function publicOrigin(request: NextRequest) {
 function redirectTarget(request: NextRequest, path: string) {
   const origin = publicOrigin(request)
   if (!path.startsWith('/') || path.startsWith('//')) {
-    return new URL('/dashboard2', origin)
+    return new URL('/dashboard3', origin)
   }
 
   return new URL(path, origin)
@@ -88,7 +88,7 @@ async function probeDatabase(): Promise<{ ok: boolean; detail: string }> {
 
 function guestFailureRedirect(request: NextRequest, reason: string) {
   console.error('[guest-auth] bootstrap failed:', reason)
-  const dashboardUrl = redirectTarget(request, '/dashboard2')
+  const dashboardUrl = redirectTarget(request, '/dashboard3')
   const response = NextResponse.redirect(dashboardUrl)
   response.cookies.set(GUEST_BOOTSTRAP_SKIP_COOKIE, '1', {
     httpOnly: true,
@@ -199,7 +199,7 @@ async function ensureGuestSignedIn(
 }
 
 export async function GET(request: NextRequest) {
-  const from = request.nextUrl.searchParams.get('from') ?? '/dashboard2'
+  const from = request.nextUrl.searchParams.get('from') ?? '/dashboard3'
   const guestConfig = getGuestConfig()
 
   if (!guestConfig.ok) {

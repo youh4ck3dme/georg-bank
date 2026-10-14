@@ -72,7 +72,7 @@ export function WelcomeScreen() {
           sessionStorage.removeItem('pending_access_request_id')
           showToast('Prístup schválený!', true)
           // Použijeme window.location.href pre spoľahlivé odoslanie HttpOnly cookie na mobiloch
-          window.location.href = '/dashboard2'
+          window.location.href = '/dashboard3'
           return true
         } else if (data.status === 'rejected') {
           clearPolling()
@@ -164,7 +164,7 @@ export function WelcomeScreen() {
         clearPolling()
         sessionStorage.removeItem('pending_access_request_id')
         showToast(data.message ?? 'Prístup schválený!', true)
-        window.location.href = data.redirectUrl || '/dashboard2'
+        window.location.href = data.redirectUrl || '/dashboard3'
         return
       }
       if (res.ok && data.requestId) {

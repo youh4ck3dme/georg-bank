@@ -14,10 +14,10 @@ export function SiteGateForm() {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const redirectAfterGate = (fromParam: string | null) => {
-    // Prefer dashboard2 — bare "/" used to bounce through redirects and look like a black screen.
-    const raw = fromParam && fromParam !== '/' ? fromParam : '/dashboard2'
+    // Prefer dashboard3 — bare "/" used to bounce through redirects and look like a black screen.
+    const raw = fromParam && fromParam !== '/' ? fromParam : '/dashboard3'
     const target =
-      raw === '/dashboard' || raw.startsWith('/dashboard?') ? '/dashboard2' : raw
+      raw === '/dashboard' || raw.startsWith('/dashboard?') ? '/dashboard3' : raw
     // Hard navigation avoids stuck client transitions on a black #030305 shell.
     window.location.assign(target)
   }

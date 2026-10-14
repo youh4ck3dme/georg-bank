@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
 
 export default function SignInPage() {
-  redirect('/dashboard2')
+  redirect('/dashboard3')
 }
