@@ -7,6 +7,8 @@ import './george-dashboard.css'
 import {
   downloadPaymentConfirmationAsPdf,
   downloadPaymentConfirmationHtml,
+  generatePaymentConfirmationHtml,
+  getPaymentConfirmationFilename,
   generateMaskedSenderIban,
   type PaymentConfirmationPdfData,
 } from '@/lib/payment-confirmation-pdf'
@@ -280,6 +282,9 @@ export function GeorgeDashboardClient({
   const [isLoaded, setIsLoaded] = useState(false)
   const [pdfOverlayOpen, setPdfOverlayOpen] = useState(false)
   const [pdfOverlayPhase, setPdfOverlayPhase] = useState<'preparing' | 'done'>('preparing')
+  const [previewReceiptHtml, setPreviewReceiptHtml] = useState<string | null>(null)
+  const [previewReceiptFilename, setPreviewReceiptFilename] = useState<string>('potvrdenie.pdf')
+  const [previewReceiptData, setPreviewReceiptData] = useState<PaymentConfirmationPdfData | null>(null)
   const [portalReady, setPortalReady] = useState(false)
   const [receiptFormat, setReceiptFormatState] = useState<ReceiptFormat>(() => getReceiptFormat())
 
@@ -1209,9 +1214,34 @@ export function GeorgeDashboardClient({
     })
   }
 
+  const openReceiptPreview = (txn: Transaction) => {
+    const isOutgoing =
+      txn.type === 'outgoing' || txn.type === 'transfer' || txn.amount < 0
+    if (!isOutgoing) {
+      showToast('Náhľad je dostupný len pre odchádzajúce platby.')
+      return
+    }
+    const data = buildTxnReceiptData(txn)
+    const html = generatePaymentConfirmationHtml(data)
+    const filename = getPaymentConfirmationFilename(data, receiptFormat)
+    setPreviewReceiptData(data)
+    setPreviewReceiptHtml(html)
+    setPreviewReceiptFilename(filename)
+  }
+
   const openStoredPdf = (txn: Transaction) => {
-    if (!txn.pdfUrl) return
-    window.open(txn.pdfUrl, '_blank', 'noopener,noreferrer')
+    if (!txn.pdfUrl) {
+      openReceiptPreview(txn)
+      return
+    }
+    try {
+      const win = window.open(txn.pdfUrl, '_blank', 'noopener,noreferrer')
+      if (!win || win.closed || typeof win.closed === 'undefined') {
+        openReceiptPreview(txn)
+      }
+    } catch {
+      openReceiptPreview(txn)
+    }
   }
 
   const showToast = (message: string) => {
@@ -3199,29 +3229,42 @@ export function GeorgeDashboardClient({
                 selectedTransaction.type === 'transfer' ||
                 selectedTransaction.amount < 0) && (
                 <div className="border-t border-slate-800/40 p-4 flex flex-col gap-2">
+                  <button
+                    type="button"
+                    data-testid="txn-preview-pdf"
+                    onClick={() => openReceiptPreview(selectedTransaction)}
+                    className="w-full min-h-11 rounded-xl bg-[#327bf5] hover:bg-blue-600 text-white font-bold text-sm flex items-center justify-center gap-2 transition-colors shadow-lg shadow-blue-900/30"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                    <span>Náhľad dokladu (PDF)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    data-testid="txn-download-receipt"
+                    onClick={() => downloadTxnReceipt(selectedTransaction)}
+                    className={`w-full min-h-11 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-colors border border-slate-700 bg-[#1b1b26] text-slate-200 hover:bg-slate-800`}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    <span>{selectedTransaction.pdfUrl ? 'Regenerovať doklad' : 'Stiahnuť doklad'}</span>
+                    <span className="text-[11px] font-normal opacity-80">({receiptFormat.toUpperCase()})</span>
+                  </button>
+
                   {selectedTransaction.pdfUrl ? (
                     <button
                       type="button"
                       data-testid="txn-open-stored-pdf"
                       onClick={() => openStoredPdf(selectedTransaction)}
-                      className="w-full min-h-11 rounded-xl bg-[#327bf5] hover:bg-blue-600 text-white font-bold text-sm flex items-center justify-center gap-2 transition-colors shadow-lg shadow-blue-900/30"
+                      className="w-full min-h-9 rounded-lg bg-slate-800/60 hover:bg-slate-800 text-slate-300 hover:text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
                     >
-                      Otvoriť uložené PDF
+                      <span>Otvoriť uložené PDF</span>
                     </button>
                   ) : null}
-                  <button
-                    type="button"
-                    data-testid="txn-download-receipt"
-                    onClick={() => downloadTxnReceipt(selectedTransaction)}
-                    className={`w-full min-h-11 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-colors ${
-                      selectedTransaction.pdfUrl
-                        ? 'border border-slate-700 bg-[#1b1b26] text-slate-200 hover:bg-slate-800'
-                        : 'bg-[#327bf5] hover:bg-blue-600 text-white shadow-lg shadow-blue-900/30'
-                    }`}
-                  >
-                    <span>{selectedTransaction.pdfUrl ? 'Regenerovať doklad' : 'Stiahnuť doklad'}</span>
-                    <span className="text-[11px] font-normal opacity-80">({receiptFormat.toUpperCase()})</span>
-                  </button>
                 </div>
               )}
             </div>
@@ -3907,6 +3950,78 @@ export function GeorgeDashboardClient({
                   onClose={() => setShowQrPreview(false)}
                   onScanAgain={handleScanAgain}
                 />
+              </div>
+            </div>
+          )}
+
+          {/* Receipt Preview Modal (Top-Level Portal) */}
+          {previewReceiptHtml && (
+            <div
+              id="receipt-preview-modal"
+              data-testid="receipt-preview-modal"
+              className="fixed inset-0 z-250 flex flex-col items-center justify-center bg-black/85 backdrop-blur-md p-2 sm:p-5"
+              onClick={() => setPreviewReceiptHtml(null)}
+            >
+              <div
+                className={`w-full max-w-4xl h-[92vh] max-h-[92vh] rounded-2xl border shadow-2xl flex flex-col overflow-hidden ${
+                  isLight ? 'bg-white border-slate-200' : 'bg-[#12131b] border-slate-700'
+                }`}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div
+                  className={`flex items-center justify-between border-b px-4 py-3 shrink-0 ${
+                    isLight ? 'bg-slate-50 border-slate-200' : 'bg-[#171822] border-slate-800'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 overflow-hidden">
+                    <svg className="w-5 h-5 text-blue-500 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span className={`font-bold text-sm truncate max-w-xs sm:max-w-md ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                      {previewReceiptFilename}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {previewReceiptData && (
+                      <button
+                        type="button"
+                        data-testid="receipt-preview-download-btn"
+                        onClick={() => {
+                          if (receiptFormat === 'pdf') {
+                            void downloadPaymentConfirmationAsPdf(previewReceiptData)
+                          } else {
+                            void downloadPaymentConfirmationHtml(previewReceiptData)
+                          }
+                        }}
+                        className="px-3 py-1.5 rounded-lg bg-[#327bf5] hover:bg-blue-600 text-white text-xs font-bold flex items-center gap-1.5 transition-colors shadow"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        <span>Stiahnuť {receiptFormat.toUpperCase()}</span>
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      data-testid="receipt-preview-close-btn"
+                      onClick={() => setPreviewReceiptHtml(null)}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                      aria-label="Zavrieť náhľad"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex-1 w-full bg-slate-900/60 overflow-hidden relative">
+                  <iframe
+                    title="Náhľad potvrdenia o platbe"
+                    srcDoc={previewReceiptHtml}
+                    className="w-full h-full border-0 bg-white"
+                  />
+                </div>
               </div>
             </div>
           )}

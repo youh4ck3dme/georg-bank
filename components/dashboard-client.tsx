@@ -477,7 +477,10 @@ export function DashboardClient({ accounts, transactions }: DashboardClientProps
               })}
             </div>
 
-            {(selectedTransaction.type === 'withdrawal' || selectedTransaction.type === 'transfer') && (
+            {(selectedTransaction.type === 'withdrawal' ||
+              selectedTransaction.type === 'transfer' ||
+              selectedTransaction.type === 'outgoing' ||
+              Number(selectedTransaction.amount) < 0) && (
               <div className="border-t border-slate-800/40 p-4 flex flex-col gap-2">
                 <a
                   href={`/api/export/payment-confirmation?transactionId=${encodeURIComponent(selectedTransaction.id)}`}

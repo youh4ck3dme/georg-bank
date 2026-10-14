@@ -42,6 +42,7 @@ const allUnitTests: TestItem[] = [
   { id: 'pdf-generator', name: 'PDF Generator & Storage Sync Pipeline', category: 'Receipts & PDFs', file: './pdf-generator.test.ts' },
   { id: 'payment-html', name: 'Payment HTML Receipt Validation & Metadata', category: 'Receipts & PDFs', file: './payment-html.test.ts' },
   { id: 'receipt-format', name: 'Receipt Format Preference & PDF Switch (PDF vs HTML)', category: 'Receipts & PDFs', file: './receipt-format.test.ts' },
+  { id: 'receipt-preview', name: 'Transaction Detail PDF Preview Modal & Export Route', category: 'Receipts & PDFs', file: './receipt-preview.regression.test.ts' },
 
   // 5. System & Health
   { id: 'health-readiness', name: 'Health & Readiness Cloud Run Probe', category: 'System & Health', file: './health-readiness.test.ts' },

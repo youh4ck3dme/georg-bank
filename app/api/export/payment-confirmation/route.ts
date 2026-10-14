@@ -15,6 +15,8 @@ import {
   requireAccessForPdf,
 } from '@/lib/access-session'
 import { isSuperadminCode, isSuperadminToken } from '@/lib/access-flow'
+import { createServiceSupabase } from '@/lib/demo-transactions-supabase'
+import { DEMO_ACCOUNT_NUMBER } from '@/lib/demo-user'
 
 export async function GET(req: Request) {
   try {
@@ -40,9 +42,12 @@ export async function GET(req: Request) {
     }
 
     const session = await auth.api.getSession({ headers: req.headers })
-    if (!session?.user) {
+    const isGuestAccess = Boolean(pdfGate.ok && (cookieToken || pdfGate.skipped))
+    if (!session?.user && !isGuestAccess) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    const userId = session?.user?.id
 
     const txnResult = await db
       .select()
@@ -50,13 +55,53 @@ export async function GET(req: Request) {
       .where(
         and(
           eq(transaction.id, transactionId),
-          eq(transaction.userId, session.user.id),
+          userId ? eq(transaction.userId, userId) : undefined,
           isSuperadmin ? undefined : eq(transaction.isSuperadmin, false),
         ),
       )
       .limit(1)
 
-    const txn = txnResult[0]
+    let txn = txnResult[0]
+    if (!txn) {
+      const supabase = createServiceSupabase()
+      if (supabase) {
+        const query = supabase
+          .from('transaction')
+          .select('*')
+          .eq('id', transactionId)
+          .limit(1)
+        if (!isSuperadmin) {
+          query.eq('isSuperadmin', false)
+        }
+        const { data } = await query.maybeSingle()
+        if (data) {
+          txn = {
+            id: data.id,
+            userId: data.userId || 'guest',
+            fromAccountId: data.fromAccountId || 'demo-acc',
+            toAccountId: data.toAccountId || null,
+            amount: Number(data.amount) || 0,
+            currency: data.currency || 'EUR',
+            type: data.type || 'outgoing',
+            status: data.status || 'completed',
+            description: data.description || '',
+            recipientName: data.recipientName || data.recipient || '',
+            recipientIban: data.recipientIban || data.iban || '',
+            variableSymbol: data.variableSymbol || data.vs || null,
+            constantSymbol: data.constantSymbol || '0308',
+            specificSymbol: data.specificSymbol || null,
+            note: data.note || null,
+            balanceBefore: data.balanceBefore !== null && data.balanceBefore !== undefined ? Number(data.balanceBefore) : null,
+            balanceAfter: data.balanceAfter !== null && data.balanceAfter !== undefined ? Number(data.balanceAfter) : null,
+            createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
+            updatedAt: data.updatedAt ? new Date(data.updatedAt) : new Date(),
+            pdfUrl: data.pdfUrl || null,
+            isSuperadmin: Boolean(data.isSuperadmin),
+          } as unknown as typeof txn
+        }
+      }
+    }
+
     if (!txn) {
       return NextResponse.json({ error: 'Transaction not found' }, { status: 404 })
     }
@@ -67,27 +112,27 @@ export async function GET(req: Request) {
     }
 
     const accountId = txn.fromAccountId
-    if (!accountId) {
-      return NextResponse.json({ error: 'Missing source account' }, { status: 400 })
+    const account = accountId
+      ? (
+          await db
+            .select()
+            .from(bankAccount)
+            .where(
+              and(
+                eq(bankAccount.id, accountId),
+                userId ? eq(bankAccount.userId, userId) : undefined,
+              ),
+            )
+            .limit(1)
+        )[0]
+      : undefined
+
+    const accountRecord = {
+      accountNumber: account?.accountNumber || DEMO_ACCOUNT_NUMBER,
+      currency: account?.currency || 'EUR',
     }
 
-    const accountResult = await db
-      .select()
-      .from(bankAccount)
-      .where(
-        and(
-          eq(bankAccount.id, accountId),
-          eq(bankAccount.userId, session.user.id),
-        ),
-      )
-      .limit(1)
-
-    const account = accountResult[0]
-    if (!account) {
-      return NextResponse.json({ error: 'Account not found' }, { status: 404 })
-    }
-
-    const confirmation = buildPaymentConfirmationFromTransaction(txn, account)
+    const confirmation = buildPaymentConfirmationFromTransaction(txn, accountRecord)
     const htmlContent = generatePaymentConfirmationHtml(confirmation)
 
     if (accessSessionRow) {
