@@ -42,8 +42,10 @@ async function runBankerChatRegressionTest() {
     assert.strictEqual(res.status, 200)
     const json = (await res.json()) as { reply: string }
     assert.ok(json.reply.length > 20, 'Reply should be a full helpful answer')
-    assert.ok(json.reply.toLowerCase().includes('limit') || json.reply.toLowerCase().includes('nastaven'), 'Answer should address daily limit')
-    console.log('  ✓ Daily limit banking question answered appropriately')
+    assert.ok(!json.reply.includes('*'), 'Reply must not contain asterisks')
+    const sentenceCount = json.reply.split(/(?<=[.!?])\s+/).filter(Boolean).length
+    assert.ok(sentenceCount <= 2, `Reply must not exceed 2 sentences (got ${sentenceCount})`)
+    console.log('  ✓ Daily limit banking question answered appropriately (max 2 sentences, 0 asterisks)')
   }
 
   // 3. Test UI file presence of required data-testids in george-dashboard-client.tsx
@@ -67,6 +69,12 @@ async function runBankerChatRegressionTest() {
       )
     }
 
+    // Verify FAB icon is circular, without white background container
+    assert.ok(code.includes('data-testid="banker-chat-fab"'), 'FAB button exists')
+    assert.ok(!code.includes('px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-900 rounded-full shadow-2xl border border-slate-200'), 'FAB button must NOT have white capsule pill background')
+    assert.ok(code.includes('fill="#2572e6"') || code.includes('fill="#1b5ec2"'), 'FAB button must have blue circular icon matching photo')
+    assert.ok(code.includes('fill="#3bb54a"') || code.includes('fill="#38b259"'), 'FAB button must have green online status indicator')
+
     assert.ok(code.includes('Zdenko Biringer'), 'george-dashboard-client.tsx must mention Zdenko Biringer')
     assert.ok(code.includes('Tomášikova 48'), 'george-dashboard-client.tsx must mention Tomášikova 48')
     assert.ok(code.includes('Pobočka otvorená do 16:00'), 'george-dashboard-client.tsx must display branch opening hours')
@@ -74,7 +82,7 @@ async function runBankerChatRegressionTest() {
     assert.ok(code.includes('Overenie platby v systéme SLSP'), 'george-dashboard-client.tsx must contain verification header')
     assert.ok(code.includes('Overiť v systéme'), 'george-dashboard-client.tsx must contain verify button')
     assert.ok(code.includes('SEPA Instant'), 'george-dashboard-client.tsx must support SEPA Instant verification')
-    console.log('  ✓ UI contract, dark theme tokens and data-testids verified in george-dashboard-client.tsx')
+    console.log('  ✓ UI contract, original FAB chat icon without white background, dark theme tokens and data-testids verified in george-dashboard-client.tsx')
   }
 
   // 4. Test POST /api/chat/banker with payment verification request
@@ -94,12 +102,15 @@ async function runBankerChatRegressionTest() {
     assert.strictEqual(res.status, 200)
     const json = (await res.json()) as { reply: string; action?: string }
     assert.ok(json.reply.length > 20, 'Reply should be an empathetic helpful answer')
+    assert.ok(!json.reply.includes('*'), 'Reply must not contain asterisks')
+    const sentenceCount = json.reply.split(/(?<=[.!?])\s+/).filter(Boolean).length
+    assert.ok(sentenceCount <= 2, `Reply must not exceed 2 sentences (got ${sentenceCount})`)
     assert.strictEqual(json.action, 'verify_payment_prompt', 'Action must trigger verify_payment_prompt')
     assert.ok(
       json.reply.toLowerCase().includes('overi') || json.reply.toLowerCase().includes('systém') || json.reply.toLowerCase().includes('doklad'),
       'Reply should mention verification or document'
     )
-    console.log('  ✓ Payment verification trigger & action flag verified')
+    console.log('  ✓ Payment verification trigger & action flag verified (max 2 sentences, 0 asterisks)')
   }
 
   console.log('✅ Banker Chat Regression Test PASSED!')

@@ -1345,8 +1345,8 @@ export function GeorgeDashboardClient({
       const replyText =
         data.reply ||
         (shouldPromptVerify
-          ? 'Áno, samozrejme. Veľmi rád vám platbu v našom bankovom systéme overím. Nižšie som pre vás pripravil zabezpečené pole na vloženie potvrdenia o platbe (PDF dokladu). Nahrajte prosím súbor a kliknite na tlačidlo „Overiť v systéme“.'
-          : 'Ďakujem za vašu správu. Ako váš osobný bankár vám s touto záležitosťou rád pomôžem.')
+          ? 'Áno, samozrejme, platbu vám v systéme rád overím. Nahrajte prosím potvrdenie o platbe v PDF do poľa nižšie a kliknite na tlačidlo Overiť v systéme.'
+          : 'Ďakujem za vašu správu, rád vám s touto záležitosťou pomôžem.')
 
       setBankerChatMessages((prev) => [
         ...prev,
@@ -4347,35 +4347,41 @@ export function GeorgeDashboardClient({
             </div>
           )}
 
-          {/* Floating Action Button (FAB) - Slovenská sporiteľňa Sme online */}
+          {/* Floating Action Button (FAB) - Pôvodná ikonka chatu Slovenská sporiteľňa bez bieleho pozadia */}
           {!isBankerChatOpen && (
-            <div className="fixed bottom-22 sm:bottom-8 right-4 sm:right-6 z-45 flex items-center gap-2">
+            <div className="fixed bottom-22 sm:bottom-8 right-4 sm:right-6 z-45">
               <button
                 type="button"
                 data-testid="banker-chat-fab"
                 onClick={openBankerChat}
-                className="group relative flex items-center gap-2.5 px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-900 rounded-full shadow-2xl border border-slate-200 transition-all duration-200 active:scale-95 cursor-pointer"
+                className="group relative w-13 h-13 sm:w-14 sm:h-14 rounded-full p-0 bg-transparent transition-transform duration-200 hover:scale-105 active:scale-95 cursor-pointer focus:outline-none select-none"
                 aria-label="Otvoriť chat Slovenská sporiteľňa"
               >
-                {/* Male Banker Avatar */}
-                <div className="relative w-9 h-9 rounded-full overflow-hidden shrink-0 border border-slate-200 shadow-xs">
-                  <img
-                    src="/images/vesna-avatar.png"
-                    alt="Ing. Zdenko Biringer"
-                    className="w-full h-full object-cover"
+                {/* Modrý kruh s tmavomodrou bublinkou a zelenou online bodkou - 1:1 podľa fotky */}
+                <svg
+                  viewBox="0 0 64 64"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="w-full h-full drop-shadow-xl"
+                >
+                  {/* Vonkajšie modré telo s tmavomodrým okrajom */}
+                  <circle cx="30" cy="34" r="28" fill="#1b5ec2" />
+                  <circle cx="30" cy="34" r="26.5" fill="#2572e6" />
+                  {/* Vnútorný reliéfny prstenec z fotky */}
+                  <circle cx="30" cy="34" r="23.5" stroke="#1d60c7" strokeWidth="1.5" fill="#2572e6" />
+
+                  {/* Tmavomodrá oválna rečová bublina v strede */}
+                  <path
+                    d="M30 22C21.7 22 15 27.2 15 33.6C15 37.3 17.2 40.6 20.6 42.7C20.2 44.3 19.3 46.3 17.8 47.5C20.1 47.5 23.2 46.4 25.2 44.8C26.7 45.2 28.3 45.4 30 45.4C38.3 45.4 45 40.2 45 33.6C45 27.2 38.3 22 30 22Z"
+                    fill="#0c3c74"
                   />
-                  <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white animate-pulse" />
-                </div>
-                <div className="text-left hidden xs:block sm:block">
-                  <div className="text-xs font-bold leading-tight flex items-center gap-1.5 text-slate-900">
-                    <span>Sme online</span>
-                    <span className="text-[10px] text-emerald-600 font-medium">● Online</span>
-                  </div>
-                  <div className="text-[10px] text-slate-500 leading-tight">Zdenko Biringer • Osobný bankár</div>
-                </div>
+
+                  {/* Zelený online indikátor v pravom hornom rohu s bielym lemovaním */}
+                  <circle cx="51" cy="13" r="9.5" fill="#3bb54a" stroke="#ffffff" strokeWidth="2.5" />
+                </svg>
 
                 {bankerUnreadCount > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 min-w-5 h-5 px-1 rounded-full bg-red-500 text-white text-[11px] font-bold flex items-center justify-center ring-2 ring-white shadow-md animate-bounce">
+                  <span className="absolute -top-1 -left-1 min-w-5 h-5 px-1 rounded-full bg-red-500 text-white text-[11px] font-bold flex items-center justify-center ring-2 ring-white shadow-md animate-bounce">
                     {bankerUnreadCount}
                   </span>
                 )}

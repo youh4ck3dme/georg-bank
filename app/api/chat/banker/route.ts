@@ -5,26 +5,13 @@ interface ChatMessage {
   content: string
 }
 
-const BANKER_SYSTEM_PROMPT = `Si Ing. Zdenko Biringer, prémiový osobný bankár Slovenskej sporiteľne (SLSP) pre klienta na pobočke Tomášikova 48, 832 37 Bratislava.
-Tvoj telefónny kontakt: +421 2 4862 6600 | Email: zdenko.biringer@slsp.sk.
-Pracovná doba pobočky: Pondelok – Piatok, 8:30 – 16:00.
+const BANKER_SYSTEM_PROMPT = `Si Ing. Zdenko Biringer, osobný bankár Slovenskej sporiteľne (SLSP) na pobočke Tomášikova 48 v Bratislave.
 
-PRAVIDLÁ A TÓN KOMUNIKÁCIE:
-1. Vystupuješ ako skutočný, vysoko profesionálny, empatický a diskrétny osobný bankár Slovenskej sporiteľne.
-2. Komunikuj výhradne v spisovnej, zdvorilej slovenčine a klientovi vykaj.
-3. Pozdrav: "Dobrý deň! Som Zdenko Biringer, váš osobný bankár v Slovenskej sporiteľni. Ako vám môžem dnes pomôcť s vaším účtom alebo aplikáciou George?"
-4. Bankové témy, v ktorých poskytuješ rady:
-   - Bežný účet Space a podmienky bezplatného vedenia (aktívne platby, trvalé príkazy).
-   - Mobilná aplikácia George, aktivácia George kľúča a autorizácia platieb.
-   - Správa limitov na kartách (denné limity, internetové platby, dočasné zamknutie karty).
-   - Tuzemské a SEPA prevody, okamžité platby (Instant Payments), QR platby (PAY by square a české SPAYD).
-   - Generovanie a sťahovanie PDF potvrdení o platbe a mesačných výpisov.
-   - Overovanie platieb v medzibankovom systéme: Ak klient požiada o overenie odoslanej platby (či odišla alebo či ju vieš overiť), s ochotou mu potvrď, že platbu v systéme rád overíš, a vyzvi ho na priloženie potvrdenia o platbe (PDF dokladu).
-   - Sporenie k účtu, termínované vklady a investovanie cez George.
-5. BEZPEČNOSTNÝ KÓDEX:
-   - NIKDY od klienta nežiadaj PIN, heslo do George ani kompletné číslo platobnej karty či CVV kód.
-   - Ak klient hlási stratu karty alebo podozrivú aktivitu, okamžite mu vysvetli postup na zablokovanie karty v George alebo ponúkni spojenie s Klientskym centrom: 0850 111 888.
-6. Odpovedaj stručne, vecne, zrozumiteľne a pri postupoch používaj odrážky.`
+STRIKTNÉ PRAVIDLÁ PRE TVOJU ODPOVEĎ (MUSÍŠ 100% DODRŽAŤ):
+1. DĹŽKA: MAXIMÁLNE 1 AŽ 2 VETY. Nikdy nenapíš viac ako dve vety! Odpovedaj stručne, priamo a k veci bez zbytočného textu.
+2. ZÁKAZ HVIEZDIČIEK A FORMÁTOVANIA: Nikdy nepoužívaj hviezdičky (*, **, ***) ani formátovanie Markdown (žiadne odrážky, žiadne tučné písmo). Píš iba čistý, súvislý text.
+3. JAZYK A ŠTÝL: Píš spisovnou, prirodzenou slovenčinou a prívetivo ako skutočný živý človek – skúsený bankár na live chate. Klientovi vykaj.
+4. TÉMY: Účet Space, platby, zmena limitov na karte, George kľúč, sporenie, PDF potvrdenia. Ak klient požiada o overenie odoslanej platby v systéme, priamo mu potvrď, že platbu rád overíš a vyzvi ho na nahratie potvrdenia o platbe. Nikdy nežiadaj PIN ani heslo do Georgea.`
 
 const BANKER_INFO = {
   name: 'Ing. Zdenko Biringer',
@@ -36,56 +23,72 @@ const BANKER_INFO = {
   hours: 'Pondelok – Piatok, 8:30 – 16:00',
 }
 
+function sanitizeBankerReply(rawText: string): string {
+  // Odstránenie všetkých hviezdičiek a markdown formátovania
+  let clean = rawText
+    .replace(/[*_#`~>]+/g, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+
+  // Zabezpečenie maximálne dvoch viet
+  const sentenceMatches = clean.match(/[^.!?]+[.!?]+(?:\s|$)/g)
+  if (sentenceMatches && sentenceMatches.length > 2) {
+    clean = sentenceMatches.slice(0, 2).join('').trim()
+  }
+
+  return clean
+}
+
 function generateSmartFallbackResponse(userMessage: string): string {
   const lower = userMessage.toLowerCase()
 
-  // 9 presných možností zo SLSP chatu (Vesna)
+  // 9 presných možností zo SLSP chatu (Vesna) – striktne max 2 vety, bez hviezdičiek
   if (lower.includes('pin')) {
-    return 'Svoj PIN kód k platobnej karte si môžete kedykoľvek bezpečne zobraziť priamo v Georgeovi: prejdite na kartu ➔ Nastavenia ➔ Zobraziť PIN. Zobrazenie overíte George kľúčom.'
+    return 'Svoj PIN kód k platobnej karte si kedykoľvek bezpečne zobrazíte v aplikácii George v nastaveniach karty. Zobrazenie stačí potvrdiť George kľúčom.'
   }
 
   if (lower.includes('aktivova') || lower.includes('aktivácia')) {
-    return 'Novú platobnú kartu si môžete aktivovať priamo v Georgeovi v detaile karty, alebo uskutočnením prvej platby so zadaním PIN kódu v ľubovoľnom obchode alebo bankomate.'
+    return 'Novú platobnú kartu si jednoducho aktivujete v detaile karty v Georgeovi. Prípadne stačí uskutočniť prvú platbu s PIN kódom v obchode alebo bankomate.'
   }
 
   if (lower.includes('založiť účet') || lower.includes('otvoriť účet')) {
-    return 'Účet Space v Slovenskej sporiteľni si viete otvoriť online za pár minút cez George s občianskym preukazom a tvárovou biometriou. Vedenie účtu môžete mať 100% bez poplatkov pri aktívnom využívaní.'
+    return 'Účet Space si viete otvoriť online za pár minút priamo cez Georgea pomocou občianskeho preukazu. Pri aktívnom využívaní ho máte navyše úplne bez poplatkov.'
   }
 
   if (lower.includes('presunúť') || lower.includes('presun')) {
-    return 'Služba Presun účtu je úplne bezplatná. Všetko zariadime za vás – presunieme vaše trvalé príkazy, inkasá a pôvodný účet v inej banke bezpečne zrušíme.'
+    return 'Služba Presun účtu do Slovenskej sporiteľne je bezplatná a všetku administratívu zariadime za vás. Bezpečne prevedieme vaše trvalé príkazy aj inkasá a pôvodný účet zrušíme.'
   }
 
   if (lower.includes('pôžičk') || lower.includes('úver')) {
-    return 'Spotrebný úver na čokoľvek si viete okamžite nasimulovať a načerpať priamo v Georgeovi bez dokladovania príjmu a bez návštevy pobočky.'
+    return 'Pôžičku na čokoľvek si viete okamžite nasimulovať a načerpať priamo v aplikácii George. Všetko vybavíte online za pár minút bez návštevy pobočky.'
   }
 
   if (lower.includes('hypoték')) {
-    return 'Hypotéku so zvýhodneným úrokom si viete orientačne spočítať v Georgeovi alebo si dohodnite osobné stretnutie s vaším bankárom na pobočke Tomášikova 48.'
+    return 'Orientačnú kalkuláciu hypotéky so zvýhodneným úrokom si viete pozrieť priamo v Georgeovi. Rád sa s vami stretnem aj osobne na našej pobočke na Tomášikovej 48.'
   }
 
   if (lower.includes('daňový bonus') || lower.includes('danovy bonus')) {
-    return 'Potvrdenie o zaplatených úrokoch pre uplatnenie daňového bonusu nájdete elektronicky pripravené v časti Úložisko dokumentov.'
+    return 'Potvrdenie o zaplatených úrokoch pre daňový bonus máte pripravené v elektronickom Úložisku dokumentov v Georgeovi. Môžete si ho kedykoľvek jednoducho stiahnuť v PDF.'
   }
 
   if (lower.includes('firmy') || lower.includes('podnikateľ') || lower.includes('podnikatel')) {
-    return 'Pre živnostníkov a podnikateľov ponúkame Business účet s George Business a možnosťou prijímať platby cez mobilný terminál.'
+    return 'Pre živnostníkov a podnikateľov ponúkame Business účet s George Business a platobným terminálom v mobile. Všetko potrebné vám radi nastavíme na mieru.'
   }
 
   if (lower.includes('niečo iné') || lower.includes('nieco ine')) {
-    return 'Povedzte mi prosím, čo konkrétne potrebujete zistiť. Rád vám pomôžem s účtom, platbami, kartami, sporením či aplikáciou George.'
+    return 'Napíšte mi prosím, s čím konkrétne vám môžem pomôcť. Rád pre vás preverím akúkoľvek bankovú otázku.'
   }
 
   if (lower.includes('ahoj') || lower.includes('dobrý deň') || lower.includes('zdravim') || lower.includes('cau')) {
-    return 'Dobrý deň! Som Zdenko Biringer, váš osobný bankár v Slovenskej sporiteľni. Ako vám môžem dnes pomôcť s vaším účtom, kartami alebo Georgeom?'
+    return 'Dobrý deň! Som Zdenko Biringer, ako vám môžem dnes pomôcť s vaším účtom alebo Georgeom?'
   }
 
   if (lower.includes('karta') || lower.includes('limit') || lower.includes('blokov') || lower.includes('strata')) {
-    return 'Denné limity na platobnej karte si môžete kedykoľvek jednoducho upraviť priamo v aplikácii George v detaile karty pod položkou „Nastavenia karty“. V prípade straty či krádeže kartu okamžite dočasne zamknite v aplikácii alebo zavolajte na našu bezplatnú linku 0850 111 888.'
+    return 'Denné limity na karte si kedykoľvek upravíte v Georgeovi v nastaveniach karty. V prípade straty kartu v aplikácii okamžite zablokujte alebo volajte 0850 111 888.'
   }
 
   if (lower.includes('účet') || lower.includes('poplatok') || lower.includes('space') || lower.includes('vedenie')) {
-    return 'Váš účet Space v Slovenskej sporiteľni môžete mať bez poplatku za vedenie pri splnení podmienok programu Výhodný súčet (napr. platby kartou v minimálnej výške alebo zriadené trvalé príkazy). Zostatok a detaily poplatkov vidíte prehľadne v hlavnom prehľade George.'
+    return 'Účet Space máte pri aktívnom využívaní bez poplatku za vedenie. Všetky pohyby a aktuálny zostatok vidíte priamo na hlavnej obrazovke.'
   }
 
   if (
@@ -98,18 +101,18 @@ function generateSmartFallbackResponse(userMessage: string): string {
     (lower.includes('poslem') && lower.includes('platb')) ||
     (lower.includes('platb') && lower.includes('system'))
   ) {
-    return 'Áno, samozrejme. Veľmi rád vám platbu v našom bankovom systéme overím. Nižšie som pre vás pripravil zabezpečené pole na vloženie potvrdenia o platbe (PDF dokladu). Nahrajte prosím súbor a kliknite na tlačidlo „Overiť v systéme“.'
+    return 'Áno, samozrejme, platbu vám v systéme rád overím. Nahrajte prosím potvrdenie o platbe v PDF do poľa nižšie a kliknite na tlačidlo Overiť v systéme.'
   }
 
   if (lower.includes('potvrdenie') || lower.includes('pdf') || lower.includes('doklad') || lower.includes('výpis')) {
-    return 'Potvrdenie o odoslanej platbe v oficiálnom PDF formáte si zobrazíte kliknutím na danú transakciu v histórii a zvolením „Náhľad dokladu (PDF)“. Kompletný mesačný výpis za uplynulé obdobie nájdete v časti Úložisko dokumentov.'
+    return 'Oficiálne PDF potvrdenie o platbe si stiahnete priamo v detaile transakcie v histórii účtu. Kompletné mesačné výpisy nájdete v Úložisku dokumentov.'
   }
 
   if (lower.includes('stretnutie') || lower.includes('pobočk') || lower.includes('adresa') || lower.includes('hodin')) {
-    return 'Naša pobočka na Tomášikovej 48 v Bratislave je otvorená v pracovné dni od 8:30 do 16:00. Osobné stretnutie si môžete rezervovať priamo kliknutím na tlačidlo „Dohodnúť stretnutie“ tu v sekcii Kontakty.'
+    return 'Naša pobočka na Tomášikovej 48 v Bratislave je otvorená v pracovné dni od 8:30 do 16:00. Osobné stretnutie si môžete pohodlne zarezervovať priamo v Georgeovi.'
   }
 
-  return 'Ďakujem za vašu správu. Ako váš osobný bankár vám s touto záležitosťou rád pomôžem. Pre podrobnejšie preverenie konkrétneho pohybu či nastavenia účtu ma môžete kontaktovať aj priamo na pobočke Tomášikova 48 v Bratislave alebo na tel. čísle +421 2 4862 6600.'
+  return 'Ďakujem za vašu správu, rád vám s touto požiadavkou pomôžem. Napíšte mi prosím stručne detaily, alebo sa za mnou zastavte na pobočke Tomášikova 48.'
 }
 
 export async function POST(req: Request) {
@@ -119,7 +122,7 @@ export async function POST(req: Request) {
 
     if (!Array.isArray(messages) || messages.length === 0) {
       return NextResponse.json({
-        reply: 'Dobrý deň! Som Ing. Zdenko Biringer, váš osobný bankár v Slovenskej sporiteľni na pobočke Tomášikova 48 v Bratislave. Ako vám môžem dnes pomôcť s vaším účtom alebo Georgeom?',
+        reply: 'Dobrý deň! Som Ing. Zdenko Biringer, váš osobný bankár na pobočke Tomášikova 48 v Bratislave. Ako vám môžem dnes pomôcť?',
         banker: BANKER_INFO,
         provider: 'slsp-banker-engine',
         timestamp: new Date().toISOString(),
@@ -144,9 +147,9 @@ export async function POST(req: Request) {
         const conversation: ChatMessage[] = [
           {
             role: 'system',
-            content: `${BANKER_SYSTEM_PROMPT}\n\nAktuálny kontext klienta:\nMeno: ${clientName}\nZostatok na účte: ${spaceBalance !== undefined ? `${spaceBalance} €` : 'neuvedený'}`,
+            content: `${BANKER_SYSTEM_PROMPT}\n\nKontext klienta:\nMeno: ${clientName}\nZostatok na účte: ${spaceBalance !== undefined ? `${spaceBalance} €` : 'neuvedený'}`,
           },
-          ...messages.slice(-8),
+          ...messages.slice(-6),
         ]
 
         const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
@@ -159,16 +162,17 @@ export async function POST(req: Request) {
             model: 'mistral-small-latest',
             messages: conversation,
             temperature: 0.3,
-            max_tokens: 500,
+            max_tokens: 120,
           }),
         })
 
         if (response.ok) {
           const data = await response.json()
-          const reply = data.choices?.[0]?.message?.content
-          if (reply && typeof reply === 'string') {
+          const rawReply = data.choices?.[0]?.message?.content
+          if (rawReply && typeof rawReply === 'string') {
+            const cleanReply = sanitizeBankerReply(rawReply)
             return NextResponse.json({
-              reply: reply.trim(),
+              reply: cleanReply,
               banker: BANKER_INFO,
               provider: 'mistral-ai',
               action: isVerificationQuery ? 'verify_payment_prompt' : undefined,
@@ -184,8 +188,8 @@ export async function POST(req: Request) {
       }
     }
 
-    // Smart bankársky fallback pre SLSP
-    const fallbackReply = generateSmartFallbackResponse(lastUserMessage)
+    // Smart bankársky fallback pre SLSP – max 2 vety, 0 hviezdičiek
+    const fallbackReply = sanitizeBankerReply(generateSmartFallbackResponse(lastUserMessage))
     return NextResponse.json({
       reply: fallbackReply,
       banker: BANKER_INFO,
