@@ -2,6 +2,14 @@ import path from 'path'
 import { spawnSync } from 'child_process'
 import { ESLint } from 'eslint'
 
+// Robust atob/btoa polyfill for jsPDF & Node runtime
+if (typeof globalThis.atob === 'undefined') {
+  globalThis.atob = (str: string) => Buffer.from(str, 'base64').toString('binary')
+}
+if (typeof globalThis.btoa === 'undefined') {
+  globalThis.btoa = (str: string) => Buffer.from(str, 'binary').toString('base64')
+}
+
 interface TestItem {
   id: string
   name: string
@@ -44,6 +52,7 @@ const allUnitTests: TestItem[] = [
   { id: 'payment-html', name: 'Payment HTML Receipt Validation & Metadata', category: 'Receipts & PDFs', file: './payment-html.test.ts' },
   { id: 'receipt-format', name: 'Receipt Format Preference & PDF Switch (PDF vs HTML)', category: 'Receipts & PDFs', file: './receipt-format.test.ts' },
   { id: 'receipt-preview', name: 'Transaction Detail PDF Preview Modal & Export Route', category: 'Receipts & PDFs', file: './receipt-preview.regression.test.ts' },
+  { id: 'qr-payment-pdf', name: 'QR Payment Smoke & A4 PDF Generator Pipeline', category: 'Receipts & PDFs', file: './qr-payment-pdf.smoke.test.ts' },
 
   // 5. System & Health
   { id: 'health-readiness', name: 'Health & Readiness Cloud Run Probe', category: 'System & Health', file: './health-readiness.test.ts' },
@@ -88,7 +97,10 @@ Použitie:
     const t0 = Date.now()
     try {
       if (test.file) {
-        await import(test.file)
+        const mod = await import(test.file)
+        if (mod && typeof mod === 'object' && 'testPromise' in mod && mod.testPromise instanceof Promise) {
+          await mod.testPromise
+        }
       }
       const durationMs = Date.now() - t0
       console.log(`  ✅ PASS [${test.category.padEnd(25)}] ${test.name} (${durationMs}ms)`)

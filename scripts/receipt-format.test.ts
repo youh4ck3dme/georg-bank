@@ -22,6 +22,8 @@ const mockStorage = {
 }
 
 const mockWindow = {
+  atob: (str: string) => Buffer.from(str, 'base64').toString('binary'),
+  btoa: (str: string) => Buffer.from(str, 'binary').toString('base64'),
   addEventListener: (name: string, fn: (e: Event) => void) => {
     listeners[name] = listeners[name] || []
     listeners[name].push(fn)
