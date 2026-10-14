@@ -3105,11 +3105,13 @@ export function GeorgeDashboardClient({
                     </div>
                   </div>
 
-                  {/* Kruhový modrý Avatar */}
-                  <div className="w-12 h-12 rounded-full bg-[#327bf5] text-white flex items-center justify-center font-bold text-base shadow-md shadow-blue-900/30 shrink-0">
-                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-                    </svg>
+                  {/* Kruhový Avatar bankára */}
+                  <div className="w-13 h-13 rounded-full overflow-hidden border-2 border-white/20 shadow-md shadow-blue-900/30 shrink-0 bg-slate-800">
+                    <img
+                      src="/images/vesna-avatar.png"
+                      alt="Ing. Zdenko Biringer"
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                 </div>
 
