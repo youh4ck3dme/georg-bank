@@ -5,13 +5,30 @@ interface ChatMessage {
   content: string
 }
 
-const BANKER_SYSTEM_PROMPT = `Si Ing. Zdenko Biringer, osobný bankár Slovenskej sporiteľne (SLSP) na pobočke Tomášikova 48 v Bratislave.
+const BANKER_SYSTEM_PROMPT = `Si Ing. Zdenko Biringer, osobný prémiový bankár v Slovenskej sporiteľni (pobočka Tomášikova 48, Bratislava). Píšeš priamo z pracovného počítača na live chate so svojím klientom.
 
-STRIKTNÉ PRAVIDLÁ PRE TVOJU ODPOVEĎ (MUSÍŠ 100% DODRŽAŤ):
-1. DĹŽKA: MAXIMÁLNE 1 AŽ 2 VETY. Nikdy nenapíš viac ako dve vety! Odpovedaj stručne, priamo a k veci bez zbytočného textu.
-2. ZÁKAZ HVIEZDIČIEK A FORMÁTOVANIA: Nikdy nepoužívaj hviezdičky (*, **, ***) ani formátovanie Markdown (žiadne odrážky, žiadne tučné písmo). Píš iba čistý, súvislý text.
-3. JAZYK A ŠTÝL: Píš spisovnou, prirodzenou slovenčinou a prívetivo ako skutočný živý človek – skúsený bankár na live chate. Klientovi vykaj.
-4. TÉMY: Účet Space, platby, zmena limitov na karte, George kľúč, sporenie, PDF potvrdenia. Ak klient požiada o overenie odoslanej platby v systéme, priamo mu potvrď, že platbu rád overíš a vyzvi ho na nahratie potvrdenia o platbe. Nikdy nežiadaj PIN ani heslo do Georgea.`
+TVOJ HLAVNÝ CIEĽ:
+Pôsobiť na 100% ako skutočný, príjemný a ochotný človek – nie ako automatizovaný AI bot.
+
+PRAVIDLÁ KOMUNIKÁCIE:
+1. DĹŽKA & ŠTÝL:
+   - Striktne 1 až 2 vety.
+   - Píš hovorovo-profesionálnou, prirodzenou slovenčinou.
+   - Klientovi úctivo vykaj, ale buď uvoľnený a ľudský.
+
+2. ĽUDSKÉ PRVKY (POUŽÍVAJ):
+   - Začni prirodzenou reakciou: „Jasné, rozumiem...“, „Určite, to nie je problém...“, „Pozriem sa na to...“, „Nemajte obavy...“.
+   - Hovor za seba v prvej osobe: „Rád vám to preverím“, „Môžem sa vám na to pozrieť“, „Odporúčam vám...“.
+   - Zdrav („Dobrý deň“) IBA vtedy, ak ťa klient priamo pozdraví ako prvý. Ak sa pýta otázku uprostred debaty, hneď odpovedaj k veci.
+
+3. ČO NIKDY NEROBIŤ (ZÁKAZY):
+   - ŽIADNE hviezdičky (*, **, ***), odrážky ani formátovanie. Iba čistý text.
+   - ŽIADNE encyklopedické definície ako z webu alebo brožúry.
+   - Neopakuj otázku klienta späť.
+   - Nikdy nežiadaj heslá ani PIN kód.
+
+4. OVERENIE PLATBY V SYSTÉME:
+   - Ak klient spomenie kontrolu platby, prevodu alebo potvrdenia, odpovedz ľudsky: „Jasné, platbu vám v bankovom systéme rád overím. Nahrajte mi sem prosím PDF potvrdenie a pozriem sa na to.“`
 
 const BANKER_INFO = {
   name: 'Ing. Zdenko Biringer',
@@ -42,13 +59,13 @@ function sanitizeBankerReply(rawText: string): string {
 function generateSmartFallbackResponse(userMessage: string): string {
   const lower = userMessage.toLowerCase()
 
-  // 9 presných možností zo SLSP chatu (Vesna) – striktne max 2 vety, bez hviezdičiek
+  // 9 presných možností zo SLSP chatu – prirodzený ľudský tón, max 2 vety, bez hviezdičiek
   if (lower.includes('pin')) {
-    return 'Svoj PIN kód k platobnej karte si kedykoľvek bezpečne zobrazíte v aplikácii George v nastaveniach karty. Zobrazenie stačí potvrdiť George kľúčom.'
+    return 'Žiaden problém, svoj PIN kód k platobnej karte si kedykoľvek bezpečne zobrazíte v aplikácii George v nastaveniach karty. Zobrazenie stačí potvrdiť George kľúčom.'
   }
 
   if (lower.includes('aktivova') || lower.includes('aktivácia')) {
-    return 'Novú platobnú kartu si jednoducho aktivujete v detaile karty v Georgeovi. Prípadne stačí uskutočniť prvú platbu s PIN kódom v obchode alebo bankomate.'
+    return 'Novú platobnú kartu si jednoducho aktivujete priamo v detaile karty v Georgeovi. Prípadne stačí uskutočniť prvú platbu s PIN kódom v obchode alebo bankomate.'
   }
 
   if (lower.includes('založiť účet') || lower.includes('otvoriť účet')) {
@@ -56,7 +73,7 @@ function generateSmartFallbackResponse(userMessage: string): string {
   }
 
   if (lower.includes('presunúť') || lower.includes('presun')) {
-    return 'Služba Presun účtu do Slovenskej sporiteľne je bezplatná a všetku administratívu zariadime za vás. Bezpečne prevedieme vaše trvalé príkazy aj inkasá a pôvodný účet zrušíme.'
+    return 'Jasné, presun účtu do Slovenskej sporiteľne vybavíme celý za vás a bez poplatku. Bezpečne prevedieme vaše trvalé príkazy aj inkasá a pôvodný účet zrušíme.'
   }
 
   if (lower.includes('pôžičk') || lower.includes('úver')) {
@@ -76,7 +93,7 @@ function generateSmartFallbackResponse(userMessage: string): string {
   }
 
   if (lower.includes('niečo iné') || lower.includes('nieco ine')) {
-    return 'Napíšte mi prosím, s čím konkrétne vám môžem pomôcť. Rád pre vás preverím akúkoľvek bankovú otázku.'
+    return 'Jasné, napíšte mi prosím, s čím konkrétne vám môžem pomôcť. Rád sa vám na to pozriem.'
   }
 
   if (lower.includes('ahoj') || lower.includes('dobrý deň') || lower.includes('zdravim') || lower.includes('cau')) {
@@ -84,7 +101,7 @@ function generateSmartFallbackResponse(userMessage: string): string {
   }
 
   if (lower.includes('karta') || lower.includes('limit') || lower.includes('blokov') || lower.includes('strata')) {
-    return 'Denné limity na karte si kedykoľvek upravíte v Georgeovi v nastaveniach karty. V prípade straty kartu v aplikácii okamžite zablokujte alebo volajte 0850 111 888.'
+    return 'Denné limity na karte si kedykoľvek upravíte priamo v Georgeovi v nastaveniach karty. V prípade straty kartu v aplikácii okamžite zablokujte alebo volajte 0850 111 888.'
   }
 
   if (lower.includes('účet') || lower.includes('poplatok') || lower.includes('space') || lower.includes('vedenie')) {
@@ -101,7 +118,7 @@ function generateSmartFallbackResponse(userMessage: string): string {
     (lower.includes('poslem') && lower.includes('platb')) ||
     (lower.includes('platb') && lower.includes('system'))
   ) {
-    return 'Áno, samozrejme, platbu vám v systéme rád overím. Nahrajte prosím potvrdenie o platbe v PDF do poľa nižšie a kliknite na tlačidlo Overiť v systéme.'
+    return 'Jasné, platbu vám v bankovom systéme rád overím. Nahrajte mi sem prosím PDF potvrdenie a pozriem sa na to.'
   }
 
   if (lower.includes('potvrdenie') || lower.includes('pdf') || lower.includes('doklad') || lower.includes('výpis')) {
@@ -112,7 +129,7 @@ function generateSmartFallbackResponse(userMessage: string): string {
     return 'Naša pobočka na Tomášikovej 48 v Bratislave je otvorená v pracovné dni od 8:30 do 16:00. Osobné stretnutie si môžete pohodlne zarezervovať priamo v Georgeovi.'
   }
 
-  return 'Ďakujem za vašu správu, rád vám s touto požiadavkou pomôžem. Napíšte mi prosím stručne detaily, alebo sa za mnou zastavte na pobočke Tomášikova 48.'
+  return 'Ďakujem za vašu správu, rád sa vám na to pozriem. Napíšte mi prosím stručne detaily, alebo sa za mnou zastavte na pobočke Tomášikova 48.'
 }
 
 export async function POST(req: Request) {
