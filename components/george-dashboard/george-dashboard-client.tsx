@@ -311,20 +311,7 @@ export function GeorgeDashboardClient({
         pdfFilename?: string
       }
     }>
-  >([
-    {
-      id: 'init-1',
-      sender: 'banker',
-      text: 'Príjemný deň, som Zdenko Biringer 😊 Váš osobný bankár pre služby a produkty Slovenskej sporiteľne.',
-      time: 'Zdenko, pred chvíľou',
-    },
-    {
-      id: 'init-2',
-      sender: 'banker',
-      text: 'S čím Vám môžem pomôcť?',
-      time: 'Zdenko, 3 minutes ago',
-    },
-  ])
+  >([])
   const bankerChatEndRef = useRef<HTMLDivElement>(null)
 
   // Stavy pre interaktívne overenie platby v chate
@@ -4485,9 +4472,9 @@ export function GeorgeDashboardClient({
                           </span>
                         </div>
                       </div>
-                      {msg.sender === 'banker' && idx === 1 && (
+                      {msg.sender === 'banker' && (
                         <span className="text-[11px] text-slate-500 font-medium pl-11.5 mt-1">
-                          Zdenko, 3 minutes ago
+                          {msg.time ? `Zdenko, ${msg.time}` : 'Zdenko'}
                         </span>
                       )}
 
@@ -4702,34 +4689,6 @@ export function GeorgeDashboardClient({
                       </div>
                     </div>
                   )}
-
-                  {/* 1:1 Preset Option Pill Buttons from Screenshot */}
-                  <div className="pt-2 pb-1 flex flex-wrap justify-center gap-2">
-                    {[
-                      'Overiť platbu v systéme.',
-                      'Chcem si u Vás založiť účet.',
-                      'Chcem si k vám presunúť osobný účet.',
-                      'Firmy a podnikatelia.',
-                      'Chcem si zobrať pôžičku.',
-                      'Mám záujem o hypotéku.',
-                      'Nepamätám si PIN kód.',
-                      'Potrebujem aktivovať platobnú kartu.',
-                      'Daňový bonus.',
-                      'Chcem vedieť niečo iné.',
-                    ].map((chip) => (
-                      <button
-                        key={chip}
-                        type="button"
-                        onClick={() => {
-                          void handleSendChatMessage(chip)
-                        }}
-                        className="chat-suggestion-chip border border-[#2572e6] bg-white hover:bg-[#f0f6ff] active:bg-[#e0edff] text-[#064ea1] text-[12.5px] font-semibold leading-tight px-3.5 py-1.5 rounded-lg transition-colors shadow-xs cursor-pointer text-center"
-                        style={{ color: '#064ea1' }}
-                      >
-                        {chip}
-                      </button>
-                    ))}
-                  </div>
 
                   <div ref={bankerChatEndRef} />
                 </div>
