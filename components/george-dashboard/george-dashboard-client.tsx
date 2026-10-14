@@ -4441,7 +4441,7 @@ export function GeorgeDashboardClient({
 
                 {/* Messages Canvas */}
                 <div className="flex-1 overflow-y-auto px-3.5 py-4 space-y-3.5 bg-white">
-                  {bankerChatMessages.map((msg, idx) => (
+                  {bankerChatMessages.map((msg) => (
                     <div
                       key={msg.id}
                       className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}
