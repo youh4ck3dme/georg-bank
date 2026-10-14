@@ -4473,13 +4473,13 @@ export function GeorgeDashboardClient({
                           className={`px-3.5 py-2.5 text-[13.5px] leading-relaxed shadow-xs ${
                             msg.sender === 'user'
                               ? 'user-bubble bg-[#2572e6] text-white rounded-2xl rounded-tr-xs'
-                              : 'banker-bubble bg-[#064ea1] text-white rounded-2xl rounded-bl-xs'
+                              : 'banker-bubble bg-[#f0f2f6] border border-slate-200/80 text-slate-900 rounded-2xl rounded-bl-xs'
                           }`}
-                          style={{ color: '#ffffff' }}
+                          style={{ color: msg.sender === 'user' ? '#ffffff' : '#0f172a' }}
                         >
                           <span
-                            className="wrap-break-word font-normal text-white"
-                            style={{ color: '#ffffff' }}
+                            className="wrap-break-word font-normal"
+                            style={{ color: msg.sender === 'user' ? '#ffffff' : '#0f172a' }}
                           >
                             {msg.text}
                           </span>
@@ -4692,13 +4692,13 @@ export function GeorgeDashboardClient({
                         />
                       </div>
                       <div
-                        className="typing-bubble px-4 py-3 bg-[#064ea1] text-white rounded-2xl rounded-bl-xs flex items-center gap-1.5 shadow-xs"
-                        style={{ color: '#ffffff' }}
+                        className="typing-bubble px-4 py-3 bg-[#f0f2f6] border border-slate-200/80 text-slate-700 rounded-2xl rounded-bl-xs flex items-center gap-1.5 shadow-xs"
+                        style={{ color: '#475569' }}
                       >
-                        <span className="typing-dot w-2 h-2 rounded-full bg-white animate-bounce" style={{ animationDelay: '0ms', backgroundColor: '#ffffff' }} />
-                        <span className="typing-dot w-2 h-2 rounded-full bg-white animate-bounce" style={{ animationDelay: '150ms', backgroundColor: '#ffffff' }} />
-                        <span className="typing-dot w-2 h-2 rounded-full bg-white animate-bounce" style={{ animationDelay: '300ms', backgroundColor: '#ffffff' }} />
-                        <span className="text-xs text-blue-100 ml-1.5 font-medium" style={{ color: '#dbeafe' }}>Zdenko píše...</span>
+                        <span className="typing-dot w-2 h-2 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: '0ms', backgroundColor: '#94a3b8' }} />
+                        <span className="typing-dot w-2 h-2 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: '150ms', backgroundColor: '#94a3b8' }} />
+                        <span className="typing-dot w-2 h-2 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: '300ms', backgroundColor: '#94a3b8' }} />
+                        <span className="text-xs text-slate-500 ml-1.5 font-medium" style={{ color: '#64748b' }}>Zdenko píše...</span>
                       </div>
                     </div>
                   )}

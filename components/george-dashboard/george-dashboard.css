@@ -150,24 +150,37 @@
   color: #ffffff !important;
 }
 
-/* Banker Live Chat Modal (Slovenská sporiteľňa – Sme online) contrast fixes */
+/* Banker Live Chat Modal (Slovenská sporiteľňa – Sme online) styling */
 .george-dash--light [data-testid='banker-chat-modal'] .chat-header,
 .george-dash--light [data-testid='banker-chat-modal'] .chat-header *,
 .george-dash--light [data-testid='banker-chat-modal'] [class*='bg-[#2572e6]'],
 .george-dash--light [data-testid='banker-chat-modal'] [class*='bg-[#2572e6]'] *,
-.george-dash--light [data-testid='banker-chat-modal'] [class*='bg-[#064ea1]'],
-.george-dash--light [data-testid='banker-chat-modal'] [class*='bg-[#064ea1]'] *,
-.george-dash--light [data-testid='banker-chat-modal'] .banker-bubble,
-.george-dash--light [data-testid='banker-chat-modal'] .banker-bubble *,
 .george-dash--light [data-testid='banker-chat-modal'] .user-bubble,
-.george-dash--light [data-testid='banker-chat-modal'] .user-bubble *,
-.george-dash--light [data-testid='banker-chat-modal'] .typing-bubble,
-.george-dash--light [data-testid='banker-chat-modal'] .typing-bubble * {
+.george-dash--light [data-testid='banker-chat-modal'] .user-bubble * {
   color: #ffffff !important;
 }
 
+/* Banker message bubble: grey background (#f0f2f6) with crisp dark text (#0f172a) */
+.george-dash--light [data-testid='banker-chat-modal'] .banker-bubble {
+  background-color: #f0f2f6 !important;
+  color: #0f172a !important;
+  border: 1px solid rgba(226, 232, 240, 0.9) !important;
+}
+.george-dash--light [data-testid='banker-chat-modal'] .banker-bubble * {
+  color: #0f172a !important;
+}
+
+/* Banker typing bubble: grey background with subtle slate text and dots */
+.george-dash--light [data-testid='banker-chat-modal'] .typing-bubble {
+  background-color: #f0f2f6 !important;
+  color: #475569 !important;
+  border: 1px solid rgba(226, 232, 240, 0.9) !important;
+}
+.george-dash--light [data-testid='banker-chat-modal'] .typing-bubble * {
+  color: #475569 !important;
+}
 .george-dash--light [data-testid='banker-chat-modal'] .typing-bubble .typing-dot {
-  background-color: #ffffff !important;
+  background-color: #94a3b8 !important;
 }
 
 .george-dash--light [data-testid='banker-chat-modal'] .chat-suggestion-chip {
