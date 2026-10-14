@@ -516,7 +516,7 @@ export async function createMovementViaSupabase(input: {
       createdAt: now,
       note: input.note,
       type,
-      status: 'Spracované',
+      status: 'Spracovaná',
       balanceBefore: currentBalanceCents / 100,
       balanceAfter: newBalanceCents / 100,
       category: input.category,

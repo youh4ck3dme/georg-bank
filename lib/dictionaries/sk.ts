@@ -72,7 +72,7 @@ export const sk = {
   pdf: {
     title: 'Potvrdenie o vykonaní platby',
     status: {
-      completed: 'Spracované',
+      completed: 'Spracovaná',
       pending: 'Čaká na spracovanie',
       failed: 'Zamietnuté',
     },

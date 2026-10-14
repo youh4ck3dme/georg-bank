@@ -18,6 +18,7 @@ import { AssistantWidget } from '@/components/assistant/assistant-widget'
 import { formatTransactionDateMedium, formatTransactionDateTime } from '@/lib/format-date'
 import { getCategoryConfigByName } from '@/lib/categories'
 import { deleteAllTransactions } from '@/app/actions/banking'
+import { formatTransactionStatus, isDeliveredStatus } from '@/lib/transaction-status'
 
 interface BankAccount {
   id: string
@@ -55,7 +56,28 @@ export function DashboardClient({ accounts, transactions }: DashboardClientProps
   const [showTransfer, setShowTransfer] = useState(false)
   const [transactionFilter, setTransactionFilter] = useState<TransactionFilter>('all')
   const [selectedTransaction, setSelectedTransaction] = useState<DashboardTransaction | null>(null)
+  const [detailNowMs, setDetailNowMs] = useState(() => Date.now())
   const [isDeleting, setIsDeleting] = useState(false)
+
+  useEffect(() => {
+    if (!selectedTransaction?.createdAt) return
+    const createdTime = new Date(selectedTransaction.createdAt).getTime()
+    if (isNaN(createdTime)) return
+
+    const elapsed = Date.now() - createdTime
+    if (elapsed >= 30_000) {
+      setDetailNowMs(Date.now())
+      return
+    }
+
+    setDetailNowMs(Date.now())
+    const remaining = Math.max(100, 30_000 - elapsed)
+    const timer = setTimeout(() => {
+      setDetailNowMs(Date.now())
+    }, remaining)
+
+    return () => clearTimeout(timer)
+  }, [selectedTransaction])
 
   const getErrorMessage = (err: unknown, fallback: string) =>
     err instanceof Error && err.message ? err.message : fallback
@@ -413,7 +435,14 @@ export function DashboardClient({ accounts, transactions }: DashboardClientProps
               {[
                 ['Suma', parseTransaction(selectedTransaction).signedAmount.replace('EUR', '€')],
                 ['Typ', parseTransaction(selectedTransaction).label],
-                ['Stav', selectedTransaction.status],
+                [
+                  'Stav',
+                  formatTransactionStatus(
+                    selectedTransaction.status,
+                    selectedTransaction.createdAt,
+                    detailNowMs
+                  ),
+                ],
                 ['Dátum', formatTransactionDateMedium(selectedTransaction.createdAt)],
                 ['Poznámka', parseTransaction(selectedTransaction).note],
                 ['Kategória', parseTransaction(selectedTransaction).category],
@@ -423,6 +452,7 @@ export function DashboardClient({ accounts, transactions }: DashboardClientProps
               ].map(([label, value]) => {
                 const isCategory = label === 'Kategória'
                 const catConfig = isCategory ? getCategoryConfigByName(value as string) : null
+                const isDelivered = label === 'Stav' && isDeliveredStatus(value as string)
 
                 return (
                   <div key={label} className="flex items-start justify-between gap-4 rounded-xl bg-[#1b1b26] border border-slate-800/40 px-3 py-2.5">
@@ -432,7 +462,15 @@ export function DashboardClient({ accounts, transactions }: DashboardClientProps
                         {value}
                       </span>
                     ) : (
-                      <span className="break-all text-right text-xs font-semibold text-white">{value}</span>
+                      <span
+                        className={`break-all text-right text-xs ${
+                          isDelivered
+                            ? 'text-emerald-400 font-bold transition-colors duration-300'
+                            : 'font-semibold text-white'
+                        }`}
+                      >
+                        {value}
+                      </span>
                     )}
                   </div>
                 )

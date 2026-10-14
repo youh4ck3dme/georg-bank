@@ -54,6 +54,7 @@ test.describe('dashboard3 – história platieb po autorizácii', () => {
     await expect(detail.getByText('Poznámka hist')).toBeVisible()
     await expect(detail.getByText(/SK80|1234567890/i)).toBeVisible()
     await expect(detail.getByText('998877')).toBeVisible()
+    await expect(detail.getByText(/Spracovaná|Doručená v banke príjemcu/)).toBeVisible()
     await expect(detail.getByTestId('txn-download-receipt')).toBeVisible()
   })
 

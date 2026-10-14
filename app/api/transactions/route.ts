@@ -468,7 +468,7 @@ export async function POST(req: Request) {
         createdAt: new Date().toISOString(),
         note,
         type,
-        status: 'Spracované',
+        status: 'Spracovaná',
         balanceBefore: currentBalanceCents / 100,
         balanceAfter: newBalanceCents / 100,
         category,

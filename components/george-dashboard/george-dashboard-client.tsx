@@ -86,7 +86,7 @@ const SEED_TRANSACTIONS: Transaction[] = [
     date: 'Dnes',
     createdAt: new Date().toISOString(),
     type: 'outgoing',
-    status: 'Spracované',
+    status: 'Spracovaná',
     category: 'Potraviny',
     note: 'Platba kartou',
   },
@@ -97,7 +97,7 @@ const SEED_TRANSACTIONS: Transaction[] = [
     date: 'Včera',
     createdAt: new Date(Date.now() - 86400000).toISOString(),
     type: 'outgoing',
-    status: 'Spracované',
+    status: 'Spracovaná',
     category: 'Telekomunikácie',
     note: 'Faktúra',
   },
@@ -108,7 +108,7 @@ const SEED_TRANSACTIONS: Transaction[] = [
     date: '10.07.2026',
     createdAt: '2026-07-10T08:00:00.000Z',
     type: 'incoming',
-    status: 'Spracované',
+    status: 'Spracovaná',
     category: 'Príjem',
     note: 'Mzda',
   },
@@ -146,6 +146,15 @@ function parseMovementDescription(description: string | undefined | null): {
   }
 }
 
+import {
+  formatTransactionStatus,
+  isDeliveredStatus,
+} from '@/lib/transaction-status'
+export {
+  formatTransactionStatus,
+  isDeliveredStatus,
+} from '@/lib/transaction-status'
+
 function normalizeTransaction(raw: Partial<Transaction> & { recipient?: string; amount?: number }): Transaction {
   const rawAmount = Number(raw.amount ?? 0)
   const inferredType: TransactionType =
@@ -174,7 +183,7 @@ function normalizeTransaction(raw: Partial<Transaction> & { recipient?: string; 
     iban: raw.iban || parsed.iban,
     vs: raw.vs || parsed.vs,
     type: inferredType,
-    status: raw.status || 'Spracované',
+    status: formatTransactionStatus(raw.status),
     balanceBefore: raw.balanceBefore,
     balanceAfter: raw.balanceAfter,
     category: raw.category,
@@ -212,6 +221,27 @@ export function GeorgeDashboardClient({
 
   const [transactionFilter, setTransactionFilter] = useState<TransactionFilter>('all')
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null)
+  const [detailNowMs, setDetailNowMs] = useState(() => Date.now())
+
+  useEffect(() => {
+    if (!selectedTransaction?.createdAt) return
+    const createdTime = new Date(selectedTransaction.createdAt).getTime()
+    if (isNaN(createdTime)) return
+
+    const elapsed = Date.now() - createdTime
+    if (elapsed >= 30_000) {
+      setDetailNowMs(Date.now())
+      return
+    }
+
+    setDetailNowMs(Date.now())
+    const remaining = Math.max(100, 30_000 - elapsed)
+    const timer = setTimeout(() => {
+      setDetailNowMs(Date.now())
+    }, remaining)
+
+    return () => clearTimeout(timer)
+  }, [selectedTransaction])
 
   const isLight = variant === 'light'
   const dashClass = `george-dash george-dash--${variant}`
@@ -980,7 +1010,7 @@ export function GeorgeDashboardClient({
       iban,
       vs: vs || undefined,
       type: 'outgoing',
-      status: 'Spracované',
+      status: 'Spracovaná',
       balanceBefore: serverTxn.balanceBefore ?? balanceBefore,
       balanceAfter: serverTxn.balanceAfter ?? balanceAfter,
       category: 'Nezaradené výdavky',
@@ -1352,7 +1382,7 @@ export function GeorgeDashboardClient({
         date: 'Dnes',
         createdAt: serverTxn.createdAt || new Date().toISOString(),
         type: 'deposit',
-        status: 'Spracované',
+        status: 'Spracovaná',
         balanceBefore,
         balanceAfter,
         category: 'Dobitie',
@@ -1436,7 +1466,7 @@ export function GeorgeDashboardClient({
         date: 'Dnes',
         createdAt: new Date().toISOString(),
         type: 'outgoing',
-        status: 'Spracované',
+        status: 'Spracovaná',
         balanceBefore,
         balanceAfter,
         category: 'Investície',
@@ -3114,7 +3144,14 @@ export function GeorgeDashboardClient({
                   [
                     ['Suma', getTxnMeta(selectedTransaction).signedAmount],
                     ['Typ', getTxnMeta(selectedTransaction).label],
-                    ['Stav', selectedTransaction.status || 'Spracované'],
+                    [
+                      'Stav',
+                      formatTransactionStatus(
+                        selectedTransaction.status,
+                        selectedTransaction.createdAt,
+                        detailNowMs
+                      ),
+                    ],
                     ['Dátum', selectedTransaction.date],
                     ['Poznámka', selectedTransaction.note || '—'],
                     ['Kategória', selectedTransaction.category || '—'],
@@ -3134,17 +3171,28 @@ export function GeorgeDashboardClient({
                     ],
                     ['ID transakcie', selectedTransaction.id],
                   ] as [string, string][]
-                ).map(([label, value]) => (
-                  <div
-                    key={label}
-                    className="flex items-start justify-between gap-4 rounded-xl bg-[#1b1b26] border border-slate-800/40 px-3 py-2.5"
-                  >
-                    <span className="shrink-0 text-xs font-bold uppercase tracking-wide text-slate-400">
-                      {label}
-                    </span>
-                    <span className="break-all text-right text-xs font-semibold text-white">{value}</span>
-                  </div>
-                ))}
+                ).map(([label, value]) => {
+                  const isDelivered = label === 'Stav' && isDeliveredStatus(value)
+                  return (
+                    <div
+                      key={label}
+                      className="flex items-start justify-between gap-4 rounded-xl bg-[#1b1b26] border border-slate-800/40 px-3 py-2.5"
+                    >
+                      <span className="shrink-0 text-xs font-bold uppercase tracking-wide text-slate-400">
+                        {label}
+                      </span>
+                      <span
+                        className={`break-all text-right text-xs ${
+                          isDelivered
+                            ? 'text-emerald-400 font-bold transition-colors duration-300'
+                            : 'font-semibold text-white'
+                        }`}
+                      >
+                        {value}
+                      </span>
+                    </div>
+                  )
+                })}
               </div>
 
               {(selectedTransaction.type === 'outgoing' ||
