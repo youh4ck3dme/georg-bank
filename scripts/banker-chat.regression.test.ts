@@ -81,8 +81,9 @@ async function runBankerChatRegressionTest() {
     assert.ok(code.includes('bg-[#151621]'), 'george-dashboard-client.tsx must use dark mode tokens')
     assert.ok(code.includes('Overenie platby v systéme SLSP'), 'george-dashboard-client.tsx must contain verification header')
     assert.ok(code.includes('Overiť v systéme'), 'george-dashboard-client.tsx must contain verify button')
+    assert.ok(code.includes('bg-[#064ea1]'), 'Banker chat message bubble must use #064ea1 background')
     assert.ok(code.includes('SEPA Instant'), 'george-dashboard-client.tsx must support SEPA Instant verification')
-    console.log('  ✓ UI contract, original FAB chat icon without white background, dark theme tokens and data-testids verified in george-dashboard-client.tsx')
+    console.log('  ✓ UI contract, original FAB chat icon without white background, banker bubble #064ea1 and data-testids verified in george-dashboard-client.tsx')
   }
 
   // 4. Test POST /api/chat/banker with payment verification request

@@ -4465,7 +4465,7 @@ export function GeorgeDashboardClient({
                           className={`px-3.5 py-2.5 text-[13.5px] leading-relaxed shadow-xs ${
                             msg.sender === 'user'
                               ? 'bg-[#2572e6] text-white rounded-2xl rounded-tr-xs'
-                              : 'bg-[#0051a8] text-white rounded-2xl rounded-bl-xs'
+                              : 'bg-[#064ea1] text-white rounded-2xl rounded-bl-xs'
                           }`}
                         >
                           <span className="wrap-break-word">{msg.text}</span>
@@ -4481,13 +4481,13 @@ export function GeorgeDashboardClient({
                       {msg.isVerificationPrompt && activeVerificationCardId === msg.id && (
                         <div className="mt-2.5 ml-11.5 p-3.5 bg-slate-50 border border-blue-200 rounded-2xl shadow-xs space-y-3 max-w-[90%] font-sans">
                           <div className="flex items-center justify-between text-xs">
-                            <div className="flex items-center gap-1.5 font-semibold text-[#0051a8]">
+                            <div className="flex items-center gap-1.5 font-semibold text-[#064ea1]">
                               <svg className="w-4 h-4 text-[#2572e6]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                               </svg>
                               <span>Overenie platby v systéme SLSP</span>
                             </div>
-                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 text-[#0051a8] font-medium">
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 text-[#064ea1] font-medium">
                               {isVerifyingPayment ? 'Prebieha overovanie' : 'Pripravené'}
                             </span>
                           </div>
@@ -4496,7 +4496,7 @@ export function GeorgeDashboardClient({
                           <div className="space-y-1">
                             <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
                               <div
-                                className="bg-linear-to-r from-[#2572e6] to-[#0051a8] h-1.5 rounded-full transition-all duration-300 ease-out"
+                                className="bg-linear-to-r from-[#2572e6] to-[#064ea1] h-1.5 rounded-full transition-all duration-300 ease-out"
                                 style={{ width: `${isVerifyingPayment ? verificationProgress : selectedVerificationFile ? 35 : 10}%` }}
                               />
                             </div>
@@ -4632,7 +4632,7 @@ export function GeorgeDashboardClient({
                           <div className="grid grid-cols-2 gap-2 text-xs pt-1">
                             <div>
                               <span className="text-[10px] text-slate-400 block">Suma a mena:</span>
-                              <span className="font-bold text-[#0051a8] text-sm">{msg.verificationResult.amount}</span>
+                              <span className="font-bold text-[#064ea1] text-sm">{msg.verificationResult.amount}</span>
                             </div>
                             <div>
                               <span className="text-[10px] text-slate-400 block">Dátum zúčtovania:</span>
@@ -4677,7 +4677,7 @@ export function GeorgeDashboardClient({
                           className="w-full h-full object-cover"
                         />
                       </div>
-                      <div className="px-4 py-3 bg-[#0051a8] text-white rounded-2xl rounded-bl-xs flex items-center gap-1.5 shadow-xs">
+                      <div className="px-4 py-3 bg-[#064ea1] text-white rounded-2xl rounded-bl-xs flex items-center gap-1.5 shadow-xs">
                         <span className="w-2 h-2 rounded-full bg-white animate-bounce" style={{ animationDelay: '0ms' }} />
                         <span className="w-2 h-2 rounded-full bg-white animate-bounce" style={{ animationDelay: '150ms' }} />
                         <span className="w-2 h-2 rounded-full bg-white animate-bounce" style={{ animationDelay: '300ms' }} />
