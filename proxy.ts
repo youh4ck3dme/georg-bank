@@ -18,7 +18,6 @@ function shouldSkipAuth(request: NextRequest) {
   const { pathname } = request.nextUrl
   return (
     pathname === '/welcome' ||
-    pathname === '/welcome2' ||
     pathname === '/robots.txt' ||
     pathname.startsWith('/_next') ||
     (process.env.NODE_ENV !== 'production' && pathname.startsWith('/dashboard-v2')) ||
@@ -165,7 +164,6 @@ export function isBlockedUserAgent(userAgent: string | null | undefined): boolea
 const KNOWN_ROUTE_PREFIXES = [
   '/',
   '/welcome',
-  '/welcome2',
   '/gate',
   '/dashboard',
   '/dashboard2',
@@ -298,7 +296,6 @@ export function proxy(request: NextRequest) {
     const accessCookie = request.cookies.get(ACCESS_COOKIE)?.value
     const accessPublicPath =
       pathname === '/welcome' ||
-      pathname === '/welcome2' ||
       pathname === '/robots.txt' ||
       pathname === '/gate' ||
       pathname.startsWith('/_next') ||
@@ -338,7 +335,6 @@ export function proxy(request: NextRequest) {
     const gatePublicPath =
       pathname === '/gate' ||
       pathname === '/welcome' ||
-      pathname === '/welcome2' ||
       pathname.startsWith('/api/access') ||
       pathname.startsWith('/api/gate') ||
       pathname.startsWith('/api/health') ||
