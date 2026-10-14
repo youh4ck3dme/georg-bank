@@ -223,6 +223,26 @@ async function runVerification() {
     failed++
   }
 
+  // 11. Test: Osobný bankár Live Chat API (/api/chat/banker)
+  try {
+    const res = await fetch(`${PROD_URL}/api/chat/banker`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: [] }),
+    })
+    const data = await res.json()
+    if (res.status === 200 && data.banker?.name === 'Ing. Zdenko Biringer' && data.reply?.includes('Zdenko Biringer')) {
+      console.log(`✅ 11. Osobný bankár Live Chat (/api/chat/banker) -> 200 OK (${data.banker.name}, ${data.provider})`)
+      passed++
+    } else {
+      console.error('❌ 11. Banker chat endpoint failed:', res.status, data)
+      failed++
+    }
+  } catch (err) {
+    console.error('❌ 11. Banker chat exception:', err)
+    failed++
+  }
+
   console.log('\n==================================================================')
   console.log(`📊 VÝSLEDOK PRODUKČNÉHO TESTU: ${passed} / ${passed + failed} ÚSPEŠNÝCH`)
   console.log('==================================================================')
