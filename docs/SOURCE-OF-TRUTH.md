@@ -1,5 +1,5 @@
 # 🏦 gro-kan | SOURCE-OF-TRUTH
-> **📌 Súhrn stavu:** Všetkých **8 core modulov** ✅ DOKONČENÉ | **Monitoring:** 5/5 policy ✅ AKTÍVNE | **Deployment:** gro-kan-00019-sqj ✅ PRODUKCIA | **Testy:** 29/29 ✅ 100% PASS
+> **📌 Súhrn stavu:** Všetkých **8 core modulov** ✅ DOKONČENÉ | **Monitoring:** 5/5 policy ✅ AKTÍVNE | **Deployment:** gro-kan-00021 ✅ PRODUKCIA | **Testy:** 30/30 ✅ 100% PASS
 
 ---
 
@@ -7,7 +7,7 @@
 ## 🧭 RÝCHLA NAVIGÁCIA
 - [🎯 Produkcia](#-produkcia) → `https://gro-kan-1040062317673.europe-west3.run.app`
 - [📊 Monitoring Dashboard](#-monitoring-alerting) → GCP Console
-- [🔒 Secrets & Storage](#-secrets-storage) → 6/6 AKTÍVNYCH
+- [🔒 Secrets & Storage](#-secrets-storage) → 7/7 AKTÍVNYCH
 - [⚙️ Architektúra](#-architektúra) → Kompletný prehľad
 - [📝 Zmeny](#-história-zmien) → Chronologický zoznam
 
@@ -397,6 +397,7 @@
 | 2026-10-13 | 🧾 PIXEL-PERFECT VÝPIS & ČIARKA V SUMÁCH | Rozšírenie parsovania súm (podpora desatinnej čiarky aj bodky, napr. 10,50 €), oprava `isPaymentSubmitting` lint varovania, pixel-perfect A4 formátovanie hlavičky výpisu z účtu so Slovenskou sporiteľňou a FX audit trailom, 27/27 test suites PASS (100%), ESLint 0 errors, 0 warnings. | `scripts/payment-html.test.ts (pass), scripts/run-all-tests.ts (27/27 pass 100%), ESLint 0 errors 0 warnings, commit 8e69dc8` |
 | 2026-10-13 | 🚀 DEPLOY gro-kan-00017-zph | Úspešne nasadená nová produkčná revízia gro-kan-00017-zph na Cloud Run (100% traffic, europe-west3). Obsahuje všetky najnovšie opravy (EUR/CZK switch IDs, pixel-perfect výpis s desatinnou čiarkou v sume, optimalizácie preloadu). Overený kompletný env výpis (ACCESS_FLOW_ENABLED=true) a 10/10 testov živej produkcie. | `gcloud run services describe -> gro-kan-00017-zph (100% traffic, Ready ✅), verify-prod-live.ts (10/10 pass 100%), curl /api/health -> 200 OK` |
 | 2026-10-14 | 🟢 STAV PREVODU & DEPLOY gro-kan-00018-sq8 | Zmena zobrazenia stavu z anglického 'completed' na 'Spracovaná' a automatický dynamický prechod po 30s na 'Doručená v banke príjemcu' (zelené písmo), 28/28 unit a regresných testov PASS, nasadená nová produkčná revízia gro-kan-00018-sq8 na Cloud Run (100% traffic, europe-west3). Overený kompletný env výpis (ACCESS_FLOW_ENABLED=true) a 10/10 testov živej produkcie. | `gcloud run services describe -> gro-kan-00018-sq8 (100% traffic, Ready ✅), verify-prod-live.ts (10/10 pass 100%), curl /api/health -> 200 OK` |
+| 2026-10-14 | 🤖 OSOBNÝ BANKÁR & CHAT | Integrácia osobného bankára Ing. Zdenka Biringera (SLSP) s transparentným portrétom, 1:1 oficiálnym SLSP chat widgetom, 9 interaktívnymi otázkami, Mistral AI s MISTRAL_API_KEY v Secret Manager a povolením /api/chat v proxy.ts | `npm run test:all (30/30 pass 100%), verify-prod-live.ts (11/11 pass 100%), gcloud run services describe -> gro-kan-00021 Ready ✅` |
 
 ---
 

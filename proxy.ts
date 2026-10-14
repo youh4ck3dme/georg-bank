@@ -22,6 +22,7 @@ function shouldSkipAuth(request: NextRequest) {
     pathname.startsWith('/_next') ||
     (process.env.NODE_ENV !== 'production' && pathname.startsWith('/dashboard-v2')) ||
     pathname.startsWith('/api/auth') ||
+    pathname.startsWith('/api/chat') ||
     pathname.startsWith('/api/pin') ||
     // Access-flow API (welcome gate): request/status/decide/session/logout authorize via the
     // access cookie or admin secret themselves and must not bounce through guest bootstrap
@@ -178,6 +179,7 @@ const KNOWN_ROUTE_PREFIXES = [
   '/api/account',
   '/api/assistant',
   '/api/auth',
+  '/api/chat',
   '/api/cron',
   '/api/debug-ingest',
   '/api/export',
@@ -302,6 +304,7 @@ export function proxy(request: NextRequest) {
       pathname.startsWith('/api/account') ||
       pathname.startsWith('/api/health') ||
       pathname.startsWith('/api/auth') ||
+      pathname.startsWith('/api/chat') ||
       pathname.startsWith('/api/pin') ||
       pathname.startsWith('/api/gate') ||
       pathname.startsWith('/api/cron')
