@@ -150,6 +150,38 @@
   color: #ffffff !important;
 }
 
+/* Banker Live Chat Modal (Slovenská sporiteľňa – Sme online) contrast fixes */
+.george-dash--light [data-testid='banker-chat-modal'] .chat-header,
+.george-dash--light [data-testid='banker-chat-modal'] .chat-header *,
+.george-dash--light [data-testid='banker-chat-modal'] [class*='bg-[#2572e6]'],
+.george-dash--light [data-testid='banker-chat-modal'] [class*='bg-[#2572e6]'] *,
+.george-dash--light [data-testid='banker-chat-modal'] [class*='bg-[#064ea1]'],
+.george-dash--light [data-testid='banker-chat-modal'] [class*='bg-[#064ea1]'] *,
+.george-dash--light [data-testid='banker-chat-modal'] .banker-bubble,
+.george-dash--light [data-testid='banker-chat-modal'] .banker-bubble *,
+.george-dash--light [data-testid='banker-chat-modal'] .user-bubble,
+.george-dash--light [data-testid='banker-chat-modal'] .user-bubble *,
+.george-dash--light [data-testid='banker-chat-modal'] .typing-bubble,
+.george-dash--light [data-testid='banker-chat-modal'] .typing-bubble * {
+  color: #ffffff !important;
+}
+
+.george-dash--light [data-testid='banker-chat-modal'] .typing-bubble .typing-dot {
+  background-color: #ffffff !important;
+}
+
+.george-dash--light [data-testid='banker-chat-modal'] .chat-suggestion-chip {
+  color: #064ea1 !important;
+  border-color: #2572e6 !important;
+  background-color: #ffffff !important;
+  font-weight: 600 !important;
+}
+
+.george-dash--light [data-testid='banker-chat-modal'] .chat-suggestion-chip:hover {
+  background-color: #f0f6ff !important;
+  color: #043875 !important;
+}
+
 .george-dash--light input,
 .george-dash--light textarea,
 .george-dash--light select {

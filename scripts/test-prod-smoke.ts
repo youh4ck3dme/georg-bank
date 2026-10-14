@@ -3,7 +3,10 @@ import fs from 'fs'
 import path from 'path'
 
 const PROD_URL = process.env.TEST_TARGET_URL || 'https://gro-kan-1040062317673.europe-west3.run.app'
-const ARTIFACTS_DIR = 'C:\\Users\\42195\\.gemini\\antigravity-ide\\brain\\d05b7caf-4cc5-40e2-a1ba-ac86f6a5002c'
+const ARTIFACTS_DIR = path.resolve(process.cwd(), 'test-results')
+if (!fs.existsSync(ARTIFACTS_DIR)) {
+  fs.mkdirSync(ARTIFACTS_DIR, { recursive: true })
+}
 const APP_PIN = process.env.APP_PIN ?? '888888'
 
 interface SmokeReport {
@@ -300,9 +303,9 @@ async function runLiveSmokeTest() {
   })
 
   try {
-    // Krok B1: Navigácia na uvítaciu stránku
+    // Krok B1: Navigácia na uvítaciu stránku (s ?uncloak=1 pre automatizovaný test)
     console.log('  Navigujem na uvítaciu obrazovku /welcome...')
-    await page.goto(`${PROD_URL}/welcome`, { waitUntil: 'networkidle', timeout: 30000 })
+    await page.goto(`${PROD_URL}/welcome?uncloak=1`, { waitUntil: 'networkidle', timeout: 30000 })
     const welcomeTitle = await page.title()
     const onWelcome = page.url().includes('/welcome')
     report.browserChecks.push({
@@ -311,6 +314,13 @@ async function runLiveSmokeTest() {
       details: `URL: ${page.url()}, Title: ${welcomeTitle}`,
     })
     console.log(`  ${onWelcome ? '✅' : '❌'} B1. Uvítacia obrazovka načítaná (${welcomeTitle})`)
+
+    // Odomknutie / odstránenie Stealth White Cloak pre automatizovaný test
+    await page.evaluate(() => {
+      const cloak = document.querySelector('[data-testid="stealth-white-cloak"]')
+      if (cloak) cloak.remove()
+    })
+    await page.waitForTimeout(200)
 
     // Vyčistíme sessionStorage aby sme neboli v pending stave z predchádzajúceho testu
     await page.evaluate(() => sessionStorage.clear())
@@ -371,15 +381,15 @@ async function runLiveSmokeTest() {
     console.log('  Klikám tlačidlo Požiadať o prístup...')
     await page.click('[data-testid="submit-code"]')
 
-    // Čakáme na URL dashboard2
-    await page.waitForURL('**/dashboard2', { timeout: 25000 })
-    const onDashboard = page.url().includes('/dashboard2')
+    // Čakáme na URL dashboard3 (alebo dashboard2)
+    await page.waitForURL(/.*\/(dashboard3|dashboard2).*/, { timeout: 25000 })
+    const onDashboard = page.url().includes('/dashboard3') || page.url().includes('/dashboard2')
     report.browserChecks.push({
-      name: 'B3. Okamžité schválenie a presmerovanie na /dashboard2',
+      name: 'B3. Okamžité schválenie a presmerovanie na Dashboard (/dashboard3)',
       passed: onDashboard,
       details: `Aktuálna URL: ${page.url()}`,
     })
-    console.log(`  ${onDashboard ? '✅' : '❌'} B3. Presmerovanie na /dashboard2 úspešné!`)
+    console.log(`  ${onDashboard ? '✅' : '❌'} B3. Presmerovanie na Dashboard úspešné: ${page.url()}`)
 
     // Krok B4: Kontrola a odomknutie PIN obrazovky
     const pinHeading = page.getByText(/Zadajte bezpečnostný PIN/i)

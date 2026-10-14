@@ -4403,15 +4403,21 @@ export function GeorgeDashboardClient({
                 className="fixed bottom-0 sm:bottom-6 right-0 sm:right-6 w-full sm:w-102.5 h-[92vh] sm:h-160 max-h-[92vh] sm:max-h-160 bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden border border-slate-200 animate-in fade-in slide-in-from-bottom-4 duration-200 font-sans"
               >
                 {/* 1:1 Header: Slovenská sporiteľňa – Sme online */}
-                <div className="bg-[#2572e6] px-4 py-3.5 flex items-center justify-between text-white shrink-0 select-none shadow-xs">
+                <div
+                  className="chat-header bg-[#2572e6] px-4 py-3.5 flex items-center justify-between text-white shrink-0 select-none shadow-xs"
+                  style={{ color: '#ffffff' }}
+                >
                   <div className="flex items-center gap-2.5">
                     {/* White Chat Bubble Icon */}
-                    <div className="w-6 h-6 flex items-center justify-center shrink-0">
+                    <div className="w-6 h-6 flex items-center justify-center shrink-0 text-white" style={{ color: '#ffffff' }}>
                       <svg className="w-5.5 h-5.5 fill-white" viewBox="0 0 24 24">
                         <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
                       </svg>
                     </div>
-                    <h2 className="text-[15px] font-semibold text-white tracking-tight">
+                    <h2
+                      className="text-[15px] font-semibold text-white tracking-tight"
+                      style={{ color: '#ffffff' }}
+                    >
                       Slovenská sporiteľňa – Sme online
                     </h2>
                   </div>
@@ -4423,6 +4429,7 @@ export function GeorgeDashboardClient({
                       data-testid="banker-chat-close-btn"
                       onClick={() => setIsBankerChatOpen(false)}
                       className="text-white hover:opacity-80 transition-opacity p-1 cursor-pointer"
+                      style={{ color: '#ffffff' }}
                       aria-label="Zminimalizovať chat"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
@@ -4435,6 +4442,7 @@ export function GeorgeDashboardClient({
                       type="button"
                       onClick={() => showToast('Osobný bankár: Ing. Zdenko Biringer • Tomášikova 48, Bratislava')}
                       className="text-white hover:opacity-80 transition-opacity p-1 cursor-pointer"
+                      style={{ color: '#ffffff' }}
                       aria-label="Menu možností"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
@@ -4464,15 +4472,21 @@ export function GeorgeDashboardClient({
                         <div
                           className={`px-3.5 py-2.5 text-[13.5px] leading-relaxed shadow-xs ${
                             msg.sender === 'user'
-                              ? 'bg-[#2572e6] text-white rounded-2xl rounded-tr-xs'
-                              : 'bg-[#064ea1] text-white rounded-2xl rounded-bl-xs'
+                              ? 'user-bubble bg-[#2572e6] text-white rounded-2xl rounded-tr-xs'
+                              : 'banker-bubble bg-[#064ea1] text-white rounded-2xl rounded-bl-xs'
                           }`}
+                          style={{ color: '#ffffff' }}
                         >
-                          <span className="wrap-break-word">{msg.text}</span>
+                          <span
+                            className="wrap-break-word font-normal text-white"
+                            style={{ color: '#ffffff' }}
+                          >
+                            {msg.text}
+                          </span>
                         </div>
                       </div>
                       {msg.sender === 'banker' && idx === 1 && (
-                        <span className="text-[11px] text-slate-400 pl-11.5 mt-1">
+                        <span className="text-[11px] text-slate-500 font-medium pl-11.5 mt-1">
                           Zdenko, 3 minutes ago
                         </span>
                       )}
@@ -4677,11 +4691,14 @@ export function GeorgeDashboardClient({
                           className="w-full h-full object-cover"
                         />
                       </div>
-                      <div className="px-4 py-3 bg-[#064ea1] text-white rounded-2xl rounded-bl-xs flex items-center gap-1.5 shadow-xs">
-                        <span className="w-2 h-2 rounded-full bg-white animate-bounce" style={{ animationDelay: '0ms' }} />
-                        <span className="w-2 h-2 rounded-full bg-white animate-bounce" style={{ animationDelay: '150ms' }} />
-                        <span className="w-2 h-2 rounded-full bg-white animate-bounce" style={{ animationDelay: '300ms' }} />
-                        <span className="text-xs text-blue-100 ml-1.5">Zdenko píše...</span>
+                      <div
+                        className="typing-bubble px-4 py-3 bg-[#064ea1] text-white rounded-2xl rounded-bl-xs flex items-center gap-1.5 shadow-xs"
+                        style={{ color: '#ffffff' }}
+                      >
+                        <span className="typing-dot w-2 h-2 rounded-full bg-white animate-bounce" style={{ animationDelay: '0ms', backgroundColor: '#ffffff' }} />
+                        <span className="typing-dot w-2 h-2 rounded-full bg-white animate-bounce" style={{ animationDelay: '150ms', backgroundColor: '#ffffff' }} />
+                        <span className="typing-dot w-2 h-2 rounded-full bg-white animate-bounce" style={{ animationDelay: '300ms', backgroundColor: '#ffffff' }} />
+                        <span className="text-xs text-blue-100 ml-1.5 font-medium" style={{ color: '#dbeafe' }}>Zdenko píše...</span>
                       </div>
                     </div>
                   )}
@@ -4706,7 +4723,8 @@ export function GeorgeDashboardClient({
                         onClick={() => {
                           void handleSendChatMessage(chip)
                         }}
-                        className="border border-[#2572e6] bg-white hover:bg-[#f0f6ff] active:bg-[#e0edff] text-[#2572e6] text-[12.5px] leading-tight px-3.5 py-1.5 rounded-lg transition-colors shadow-xs cursor-pointer text-center"
+                        className="chat-suggestion-chip border border-[#2572e6] bg-white hover:bg-[#f0f6ff] active:bg-[#e0edff] text-[#064ea1] text-[12.5px] font-semibold leading-tight px-3.5 py-1.5 rounded-lg transition-colors shadow-xs cursor-pointer text-center"
+                        style={{ color: '#064ea1' }}
                       >
                         {chip}
                       </button>
