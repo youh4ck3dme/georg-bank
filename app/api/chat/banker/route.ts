@@ -38,6 +38,43 @@ const BANKER_INFO = {
 function generateSmartFallbackResponse(userMessage: string): string {
   const lower = userMessage.toLowerCase()
 
+  // 9 presných možností zo SLSP chatu (Vesna)
+  if (lower.includes('pin')) {
+    return 'Svoj PIN kód k platobnej karte si môžete kedykoľvek bezpečne zobraziť priamo v Georgeovi: prejdite na kartu ➔ Nastavenia ➔ Zobraziť PIN. Zobrazenie overíte George kľúčom.'
+  }
+
+  if (lower.includes('aktivova') || lower.includes('aktivácia')) {
+    return 'Novú platobnú kartu si môžete aktivovať priamo v Georgeovi v detaile karty, alebo uskutočnením prvej platby so zadaním PIN kódu v ľubovoľnom obchode alebo bankomate.'
+  }
+
+  if (lower.includes('založiť účet') || lower.includes('otvoriť účet')) {
+    return 'Účet Space v Slovenskej sporiteľni si viete otvoriť online za pár minút cez George s občianskym preukazom a tvárovou biometriou. Vedenie účtu môžete mať 100% bez poplatkov pri aktívnom využívaní.'
+  }
+
+  if (lower.includes('presunúť') || lower.includes('presun')) {
+    return 'Služba Presun účtu je úplne bezplatná. Všetko zariadime za vás – presunieme vaše trvalé príkazy, inkasá a pôvodný účet v inej banke bezpečne zrušíme.'
+  }
+
+  if (lower.includes('pôžičk') || lower.includes('úver')) {
+    return 'Spotrebný úver na čokoľvek si viete okamžite nasimulovať a načerpať priamo v Georgeovi bez dokladovania príjmu a bez návštevy pobočky.'
+  }
+
+  if (lower.includes('hypoték')) {
+    return 'Hypotéku so zvýhodneným úrokom si viete orientačne spočítať v Georgeovi alebo si dohodnite osobné stretnutie s vaším bankárom na pobočke Tomášikova 48.'
+  }
+
+  if (lower.includes('daňový bonus') || lower.includes('danovy bonus')) {
+    return 'Potvrdenie o zaplatených úrokoch pre uplatnenie daňového bonusu nájdete elektronicky pripravené v časti Úložisko dokumentov.'
+  }
+
+  if (lower.includes('firmy') || lower.includes('podnikateľ') || lower.includes('podnikatel')) {
+    return 'Pre živnostníkov a podnikateľov ponúkame Business účet s George Business a možnosťou prijímať platby cez mobilný terminál.'
+  }
+
+  if (lower.includes('niečo iné') || lower.includes('nieco ine')) {
+    return 'Povedzte mi prosím, čo konkrétne potrebujete zistiť. Rád vám pomôžem s účtom, platbami, kartami, sporením či aplikáciou George.'
+  }
+
   if (lower.includes('ahoj') || lower.includes('dobrý deň') || lower.includes('zdravim') || lower.includes('cau')) {
     return 'Dobrý deň! Som Zdenko Biringer, váš osobný bankár v Slovenskej sporiteľni. Ako vám môžem dnes pomôcť s vaším účtom, kartami alebo Georgeom?'
   }
