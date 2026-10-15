@@ -18,6 +18,13 @@ function shouldSkipAuth(request: NextRequest) {
   const { pathname } = request.nextUrl
   return (
     pathname === '/welcome' ||
+    pathname === '/offline.html' ||
+    pathname === '/site.webmanifest' ||
+    pathname === '/service-worker.js' ||
+    pathname === '/favicon.ico' ||
+    pathname === '/icon.svg' ||
+    pathname.startsWith('/android-chrome-') ||
+    pathname === '/apple-touch-icon.png' ||
     pathname === '/robots.txt' ||
     pathname.startsWith('/_next') ||
     (process.env.NODE_ENV !== 'production' && pathname.startsWith('/dashboard-v2')) ||
@@ -296,6 +303,13 @@ export function proxy(request: NextRequest) {
     const accessCookie = request.cookies.get(ACCESS_COOKIE)?.value
     const accessPublicPath =
       pathname === '/welcome' ||
+      pathname === '/offline.html' ||
+      pathname === '/site.webmanifest' ||
+      pathname === '/service-worker.js' ||
+      pathname === '/favicon.ico' ||
+      pathname === '/icon.svg' ||
+      pathname.startsWith('/android-chrome-') ||
+      pathname === '/apple-touch-icon.png' ||
       pathname === '/robots.txt' ||
       pathname === '/gate' ||
       pathname.startsWith('/_next') ||
@@ -335,6 +349,13 @@ export function proxy(request: NextRequest) {
     const gatePublicPath =
       pathname === '/gate' ||
       pathname === '/welcome' ||
+      pathname === '/offline.html' ||
+      pathname === '/site.webmanifest' ||
+      pathname === '/service-worker.js' ||
+      pathname === '/favicon.ico' ||
+      pathname === '/icon.svg' ||
+      pathname.startsWith('/android-chrome-') ||
+      pathname === '/apple-touch-icon.png' ||
       pathname.startsWith('/api/access') ||
       pathname.startsWith('/api/gate') ||
       pathname.startsWith('/api/health') ||
