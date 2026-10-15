@@ -218,6 +218,16 @@ export function WelcomeScreen() {
     { digit: '9', letters: 'W X Y Z' },
   ]
 
+  // Hidden input for mobile keyboard support
+  const hiddenInputRef = useRef<HTMLInputElement>(null)
+  
+  // Focus hidden input when component mounts for better mobile UX
+  useEffect(() => {
+    if (hiddenInputRef.current) {
+      hiddenInputRef.current.focus()
+    }
+  }, [])
+
   return (
     <div
       className="flex justify-center items-center select-none bg-black"
@@ -226,14 +236,22 @@ export function WelcomeScreen() {
       <div className="relative w-full max-w-105 h-full flex flex-col justify-between bg-[#737373] overflow-hidden shadow-2xl">
         {/* Toast */}
         <div
-          className={`absolute top-6 left-1/2 -translate-x-1/2 z-50 transition-all duration-300 w-[90%] max-w-85 ${
-            toast.visible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-20 pointer-events-none'
+          className={`absolute top-6 left-1/2 -translate-x-1/2 z-50 transition-all duration-200 ease-out w-[90%] max-w-85 ${
+            toast.visible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4 pointer-events-none'
           }`}
+          style={{
+            transitionProperty: 'opacity, transform',
+            transitionDuration: '200ms',
+            transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)'
+          }}
         >
           <div
             className={`flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-xl text-sm font-semibold text-white ${
               toast.ok ? 'bg-emerald-600' : 'bg-red-600'
             }`}
+            style={{
+              boxShadow: '0 10px 40px -10px rgba(0, 0, 0, 0.25)'
+            }}
           >
             <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               {toast.ok ? (
@@ -258,7 +276,7 @@ export function WelcomeScreen() {
               Prístup
             </h1>
             <p className="text-[16px] font-semibold text-[#242528] mt-0.5">
-              {phase === 'pending' ? 'Čaká sa na schválenie' : 'Zadaj 16-miestny kód'}
+              {phase === 'pending' ? 'Čaká sa na schválenie' : 'Zadajte 16 číslic'}
             </p>
             <p className="text-[16px] font-semibold text-[#111215] mt-2.5 tracking-tight">
               {phase === 'pending'
@@ -299,13 +317,42 @@ export function WelcomeScreen() {
               </button>
             </div>
 
+            {/* Hidden input for mobile keyboard support */}
+            <input
+              ref={hiddenInputRef}
+              type="text"
+              inputMode="numeric"
+              pattern="\d{16}"
+              autoComplete="off"
+              autoCapitalize="off"
+              spellCheck={false}
+              maxLength={16}
+              value={digits}
+              onChange={(e) => {
+                const value = e.target.value.replace(/\D/g, '').slice(0, 16)
+                if (value !== digits) {
+                  setDigits(value)
+                  playTapTone()
+                }
+              }}
+              onFocus={() => {
+                // Keep focus but don't show keyboard on desktop
+                if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+                  hiddenInputRef.current?.blur()
+                }
+              }}
+              className="absolute opacity-0 w-0 h-0 pointer-events-none"
+              aria-hidden="true"
+            />
+
             {/* 16-digit input box */}
             <div
               className="relative w-full h-15 bg-white border border-[#bcbcc0] focus-within:border-black rounded-[14px] px-3.5 pt-1.5 pb-1 flex flex-col justify-center cursor-text transition-all shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
               data-testid="code-input-box"
+              onClick={() => hiddenInputRef.current?.focus()}
             >
-              <span className="text-[12.5px] text-[#636366] font-medium leading-tight select-none">
-                Zadaj 16-miestny kód
+              <span className="text-[12.5px] text-[#636366] font-medium leading-tight select-none transition-opacity duration-100">
+                {phase === 'pending' ? 'Čaká sa na schválenie' : 'Zadajte 16 číslic'}
               </span>
               <div className="flex items-center h-6 mt-0.5 overflow-hidden">
                 <span
@@ -315,7 +362,7 @@ export function WelcomeScreen() {
                   {formattedDigits}
                 </span>
                 <span
-                  className={`inline-block w-0.5 h-5 bg-black ml-px ${
+                  className={`inline-block w-0.5 h-5 bg-black ml-px transition-opacity duration-100 ${
                     digits.length < CODE_LENGTH ? 'animate-[cursorBlink_1.1s_step-end_infinite]' : 'opacity-0'
                   }`}
                 />
@@ -345,12 +392,18 @@ export function WelcomeScreen() {
                   data-testid="submit-code"
                   className={`w-full h-12 rounded-[14px] font-semibold text-[16.5px] flex items-center justify-center transition-all select-none ${
                     canSubmit
-                      ? 'bg-black text-white hover:bg-[#1a1a1a] cursor-pointer active:scale-[0.99] shadow-md'
+                      ? 'bg-black text-white hover:bg-[#1a1a1a] cursor-pointer active:scale-[0.99] shadow-md active:opacity-90'
                       : 'bg-[#e5e5ea] text-[#8e8e93] cursor-not-allowed'
                   }`}
+                  style={{
+                    boxShadow: canSubmit ? '0 4px 14px rgba(0, 0, 0, 0.12)' : 'none'
+                  }}
                 >
                   {phase === 'submitting' ? (
-                    <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <>
+                      <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span className="ml-2">Spracúvam...</span>
+                    </>
                   ) : (
                     'Požiadať o prístup'
                   )}
@@ -368,11 +421,15 @@ export function WelcomeScreen() {
                   type="button"
                   onClick={() => pressDigit(key.digit)}
                   data-testid={`key-${key.digit}`}
-                  className="h-11.75 bg-white rounded-[7px] shadow-[0_1.5px_0_rgba(0,0,0,0.35)] flex flex-col items-center justify-center active:bg-[#b0b4ba] active:scale-[0.96] transition-all cursor-pointer"
+                  className="h-11.75 bg-white rounded-[7px] shadow-[0_1.5px_0_rgba(0,0,0,0.35)] flex flex-col items-center justify-center active:bg-[#b0b4ba] active:scale-[0.96] transition-all cursor-pointer hover:bg-[#f0f0f0] focus:outline-none focus:ring-2 focus:ring-black/10"
+                  style={{
+                    transitionProperty: 'transform, background-color, box-shadow',
+                    transitionDuration: '100ms'
+                  }}
                 >
-                  <span className="text-[26px] font-normal text-black leading-none">{key.digit}</span>
+                  <span className="text-[26px] font-normal text-black leading-none transition-transform duration-75 active:scale-90">{key.digit}</span>
                   {key.letters ? (
-                    <span className="text-[9.5px] font-bold tracking-[0.18em] text-black leading-none uppercase -mt-0.5">
+                    <span className="text-[9.5px] font-bold tracking-[0.18em] text-black leading-none uppercase -mt-0.5 transition-transform duration-75 active:scale-90">
                       {key.letters}
                     </span>
                   ) : (
