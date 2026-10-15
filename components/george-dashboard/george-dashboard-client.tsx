@@ -4404,13 +4404,13 @@ export function GeorgeDashboardClient({
             <>
               {/* Backdrop for mobile */}
               <div
-                className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 sm:hidden"
+                className="fixed inset-0 bg-black/50 backdrop-blur-xs z-999998 sm:hidden"
                 onClick={() => setIsBankerChatOpen(false)}
               />
 
               <div
                 data-testid="banker-chat-modal"
-                className="fixed bottom-0 sm:bottom-6 right-0 sm:right-6 w-full sm:w-102.5 h-[92vh] sm:h-160 max-h-[92vh] sm:max-h-160 bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden border border-slate-200 animate-in fade-in slide-in-from-bottom-4 duration-200 font-sans"
+                className="fixed bottom-0 sm:bottom-6 right-0 sm:right-6 w-full sm:w-102.5 h-[92vh] sm:h-160 max-h-[92vh] sm:max-h-160 bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl z-999999 flex flex-col overflow-hidden border border-slate-200 animate-in fade-in slide-in-from-bottom-4 duration-200 font-sans"
               >
                 {/* 1:1 Header: Slovenská sporiteľňa – Sme online */}
                 <div
