@@ -53,6 +53,7 @@ const allUnitTests: TestItem[] = [
   { id: 'receipt-format', name: 'Receipt Format Preference & PDF Switch (PDF vs HTML)', category: 'Receipts & PDFs', file: './receipt-format.test.ts' },
   { id: 'receipt-preview', name: 'Transaction Detail PDF Preview Modal & Export Route', category: 'Receipts & PDFs', file: './receipt-preview.regression.test.ts' },
   { id: 'qr-payment-pdf', name: 'QR Payment Smoke & A4 PDF Generator Pipeline', category: 'Receipts & PDFs', file: './qr-payment-pdf.smoke.test.ts' },
+  { id: 'banker-pdf-verification', name: 'Banker PDF Verification & SEPA Instant Matching Integrity', category: 'Receipts & PDFs', file: './banker-pdf-verification.test.ts' },
 
   // 5. System & Health
   { id: 'health-readiness', name: 'Health & Readiness Cloud Run Probe', category: 'System & Health', file: './health-readiness.test.ts' },

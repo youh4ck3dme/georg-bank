@@ -1,6 +1,21 @@
 {
   "recommendations": [
-    "vscjava.vscode-gradle",
-    "vscjava.vscode-java-pack"
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "bradlc.vscode-tailwindcss",
+    "nextjs.next-js",
+    "cancerbats.ts-toolbox",
+    "christian-kohler.npm-intellisense",
+    "formulahendry.auto-rename-tag",
+    "christian-kohler.path-intellisense",
+    "eamodio.gitlens",
+    "ms-playwright.playwright",
+    "capacitor-community.capacitor-vscode",
+    "supabase.supabase",
+    "alexcvzz.vscode-sqlite",
+    "dsznajder.es7-react-js-snippets",
+    "houseinisprogramming.nextjs-config-intellisense",
+    "yoavbls.pretty-ts-errors",
+    "meta.pyrefly"
   ]
 }

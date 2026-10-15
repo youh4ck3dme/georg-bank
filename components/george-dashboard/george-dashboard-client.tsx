@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
 import './george-dashboard.css'
@@ -315,7 +315,15 @@ export function GeorgeDashboardClient({
   const bankerChatEndRef = useRef<HTMLDivElement>(null)
 
   // Stavy pre interaktívne overenie platby v chate
-  const [selectedVerificationFile, setSelectedVerificationFile] = useState<{ name: string; size: string } | null>(null)
+  const [selectedVerificationFile, setSelectedVerificationFile] = useState<{
+    name: string
+    size: string
+    amount?: string
+    recipient?: string
+    date?: string
+    pdfUrl?: string
+  } | null>(null)
+  const [isRecentReceiptsOpen, setIsRecentReceiptsOpen] = useState(false)
   const [isVerifyingPayment, setIsVerifyingPayment] = useState(false)
   const [verificationProgress, setVerificationProgress] = useState(0)
   const [verificationStageText, setVerificationStageText] = useState('')
@@ -1407,28 +1415,37 @@ export function GeorgeDashboardClient({
     setTimeout(() => {
       setIsVerifyingPayment(false)
       setActiveVerificationCardId(null)
+      setIsRecentReceiptsOpen(false)
       const nowTime = new Date().toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' })
       const verifiedTxnId = `SEPA-INST-SK${Date.now().toString().slice(-8)}`
+
+      const verifiedAmount = selectedVerificationFile?.amount || '150,00 EUR'
+      const verifiedPdf = selectedVerificationFile?.pdfUrl || '/potvrdenie-qr-platba.pdf'
+      const verifiedRecipient = selectedVerificationFile?.recipient
+      const verifiedNote = selectedVerificationFile?.name
+        ? `Overené na základe dokladu: ${selectedVerificationFile.name}${verifiedRecipient ? ` (Príjemca: ${verifiedRecipient})` : ''}`
+        : 'Overené cez autorizovaný kanál George'
+
+      const spokenAmount = selectedVerificationFile?.amount ? `vo výške ${selectedVerificationFile.amount} ` : ''
+      const spokenRecipient = verifiedRecipient ? `pre príjemcu „${verifiedRecipient}“ ` : ''
 
       setBankerChatMessages((prev) => [
         ...prev,
         {
           id: `bnk-verify-${Date.now()}`,
           sender: 'banker',
-          text: 'Vážený klient, vašu platbu som práve overil v medzibankovom systéme Slovenskej sporiteľne. Platba bola úspešne spracovaná a odoslaná do cieľovej banky príjemcu v režime SEPA Instant.',
+          text: `Vážený klient, vašu platbu ${spokenAmount}${spokenRecipient}som práve overil v medzibankovom systéme Slovenskej sporiteľne. Všetky náležitosti a digitálny podpis dokladu sedia, platba bola úspešne spracovaná a odoslaná do cieľovej banky príjemcu v režime SEPA Instant.`,
           time: nowTime,
           verificationResult: {
             status: 'Doručená v banke príjemcu (Spracovaná)',
-            amount: '150,00 EUR',
+            amount: verifiedAmount,
             currency: 'EUR',
-            date: `Dnes, ${nowTime}`,
+            date: selectedVerificationFile?.date ? `${selectedVerificationFile.date}, ${nowTime}` : `Dnes, ${nowTime}`,
             transferType: 'SEPA Instant (Okamžitá platba)',
             intermediary: 'Slovenská sporiteľňa, a.s. ➔ TARGET2 / NBS',
             code: verifiedTxnId,
-            note: selectedVerificationFile?.name
-              ? `Overené na základe dokladu: ${selectedVerificationFile.name}`
-              : 'Overené cez autorizovaný kanál George',
-            pdfFilename: 'potvrdenie-qr-platba.pdf',
+            note: verifiedNote,
+            pdfFilename: verifiedPdf,
           },
         },
       ])
@@ -1799,6 +1816,12 @@ export function GeorgeDashboardClient({
       signedAmount: `${isOutgoing ? '-' : '+'} ${formatEurSk(Math.abs(txn.amount))} €`,
     }
   }
+
+  const recentPdfReceipts = useMemo(() => {
+    return state.transactions
+      .filter((t) => t.type === 'outgoing' || t.type === 'transfer' || t.amount < 0)
+      .slice(0, 10)
+  }, [state.transactions])
 
   const filterItems: { value: TransactionFilter; label: string }[] = [
     { value: 'all', label: 'Všetko' },
@@ -4543,8 +4566,12 @@ export function GeorgeDashboardClient({
                                       <span className="text-[10px] font-bold">PDF</span>
                                     </div>
                                     <div className="truncate">
-                                      <p className="text-xs font-medium text-slate-900 truncate">{selectedVerificationFile.name}</p>
-                                      <p className="text-[10px] text-slate-500">{selectedVerificationFile.size} • Pripravené na overenie</p>
+                                      <p className="text-xs font-semibold text-slate-900 truncate">{selectedVerificationFile.name}</p>
+                                      <p className="text-[10px] text-slate-500 truncate">
+                                        {selectedVerificationFile.recipient ? `${selectedVerificationFile.recipient} • ` : ''}
+                                        {selectedVerificationFile.amount ? `${selectedVerificationFile.amount} • ` : ''}
+                                        {selectedVerificationFile.size} • Pripravené na overenie
+                                      </p>
                                     </div>
                                   </div>
                                   <button
@@ -4584,22 +4611,109 @@ export function GeorgeDashboardClient({
                                 </div>
                               )}
 
+                              {/* Posledných 10 vygenerovaných PDF dokladov Georgea */}
+                              {isRecentReceiptsOpen && (
+                                <div className="p-2 bg-white rounded-xl border border-blue-200 shadow-md space-y-1.5 animate-in fade-in duration-150">
+                                  <div className="flex items-center justify-between px-1 pb-1 border-b border-slate-100">
+                                    <span className="text-[11px] font-bold text-[#064ea1]">
+                                      Posledné PDF doklady ({recentPdfReceipts.length})
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => setIsRecentReceiptsOpen(false)}
+                                      className="text-slate-400 hover:text-slate-600 text-xs cursor-pointer p-0.5"
+                                      aria-label="Zatvoriť zoznam"
+                                    >
+                                      ✕
+                                    </button>
+                                  </div>
+                                  <div className="max-h-44 overflow-y-auto divide-y divide-slate-100 space-y-0.5">
+                                    {recentPdfReceipts.length > 0 ? (
+                                      recentPdfReceipts.map((txn) => {
+                                        const cleanFilename = `potvrdenie-${txn.recipient.toLowerCase().replace(/[^a-z0-9]/g, '-') || 'platba'}.pdf`
+                                        const amountFormatted = `${formatEurSk(Math.abs(txn.amount))} EUR`
+                                        return (
+                                          <button
+                                            key={txn.id}
+                                            type="button"
+                                            onClick={() => {
+                                              setSelectedVerificationFile({
+                                                name: cleanFilename,
+                                                size: '8.4 kB',
+                                                amount: amountFormatted,
+                                                recipient: txn.recipient,
+                                                date: txn.date,
+                                                pdfUrl: txn.pdfUrl || '/potvrdenie-qr-platba.pdf',
+                                              })
+                                              setIsRecentReceiptsOpen(false)
+                                            }}
+                                            className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-blue-50/80 transition-colors text-left group cursor-pointer"
+                                          >
+                                            <div className="flex items-center gap-2 min-w-0">
+                                              <div className="w-6 h-6 rounded bg-red-50 text-red-600 flex items-center justify-center shrink-0 border border-red-200 text-[9px] font-bold">
+                                                PDF
+                                              </div>
+                                              <div className="truncate">
+                                                <p className="text-xs font-semibold text-slate-800 truncate group-hover:text-[#2572e6]">
+                                                  {txn.recipient}
+                                                </p>
+                                                <p className="text-[10px] text-slate-400">
+                                                  {txn.date} {txn.note ? `• ${txn.note}` : ''}
+                                                </p>
+                                              </div>
+                                            </div>
+                                            <span className="text-xs font-bold text-slate-900 shrink-0 ml-2">
+                                              -{formatEurSk(Math.abs(txn.amount))} €
+                                            </span>
+                                          </button>
+                                        )
+                                      })
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setSelectedVerificationFile({
+                                            name: 'potvrdenie-qr-platba.pdf',
+                                            size: '7.4 kB',
+                                            amount: '150,00 EUR',
+                                            recipient: 'Slovenská sporiteľňa',
+                                            date: 'Dnes',
+                                            pdfUrl: '/potvrdenie-qr-platba.pdf',
+                                          })
+                                          setIsRecentReceiptsOpen(false)
+                                        }}
+                                        className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-blue-50/80 transition-colors text-left group cursor-pointer"
+                                      >
+                                        <div className="flex items-center gap-2 min-w-0">
+                                          <div className="w-6 h-6 rounded bg-red-50 text-red-600 flex items-center justify-center shrink-0 border border-red-200 text-[9px] font-bold">
+                                            PDF
+                                          </div>
+                                          <div>
+                                            <p className="text-xs font-semibold text-slate-800">potvrdenie-qr-platba.pdf</p>
+                                            <p className="text-[10px] text-slate-400">Základné George potvrdenie</p>
+                                          </div>
+                                        </div>
+                                        <span className="text-xs font-bold text-slate-900">150,00 €</span>
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+
                               {/* Akčné tlačidlá formulára */}
-                              <div className="flex items-center justify-between pt-1 gap-2">
+                              <div className="flex items-center justify-between pt-1 gap-2 flex-wrap">
                                 <button
                                   type="button"
-                                  onClick={() => {
-                                    setSelectedVerificationFile({
-                                      name: 'potvrdenie-qr-platba.pdf',
-                                      size: '7.4 kB',
-                                    })
-                                  }}
+                                  onClick={() => setIsRecentReceiptsOpen((prev) => !prev)}
                                   className="text-[11px] text-[#2572e6] hover:underline flex items-center gap-1 font-medium cursor-pointer"
                                 >
                                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                   </svg>
-                                  Vložiť doklad z Georgea
+                                  <span>Vybrať z posledných 10 PDF dokladov Georgea ({recentPdfReceipts.length})</span>
+                                  <svg className={`w-3 h-3 transition-transform ${isRecentReceiptsOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                                  </svg>
                                 </button>
 
                                 <button
@@ -4652,7 +4766,7 @@ export function GeorgeDashboardClient({
                           <div className="pt-1.5 border-t border-slate-100 flex items-center justify-between text-[11px]">
                             <span className="text-slate-500 font-mono text-[10px]">{msg.verificationResult.code}</span>
                             <a
-                              href="/potvrdenie-qr-platba.pdf"
+                              href={msg.verificationResult.pdfFilename || '/potvrdenie-qr-platba.pdf'}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-[#2572e6] hover:underline font-semibold flex items-center gap-1"

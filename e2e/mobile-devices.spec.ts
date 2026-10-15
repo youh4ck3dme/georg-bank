@@ -37,7 +37,7 @@ test.describe('Mobile Viewport & Hardware Cutout Safety Suite (iOS 13+ & Android
       // Overenie, že body má user-select: none (Flutter app feel)
       const bodyUserSelect = await page.evaluate(() => {
         const style = window.getComputedStyle(document.body)
-        return style.userSelect || (style as Record<string, string>)['-webkit-user-select']
+        return style.userSelect || style.getPropertyValue('-webkit-user-select') || (style as unknown as Record<string, string>)['-webkit-user-select']
       })
       expect(bodyUserSelect, 'Telo aplikácie musí mať vypnuté označovanie textu').toBe('none')
 
@@ -46,7 +46,7 @@ test.describe('Mobile Viewport & Hardware Cutout Safety Suite (iOS 13+ & Android
       if (await inputEl.isVisible().catch(() => false)) {
         const inputUserSelect = await inputEl.evaluate((el) => {
           const style = window.getComputedStyle(el)
-          return style.userSelect || (style as Record<string, string>)['-webkit-user-select']
+          return style.userSelect || style.getPropertyValue('-webkit-user-select') || (style as unknown as Record<string, string>)['-webkit-user-select']
         })
         expect(inputUserSelect, 'Input musí mať povolený výber textu pre vkladanie/písanie').toBe('text')
 

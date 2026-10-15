@@ -398,6 +398,7 @@
 | 2026-10-13 | 🚀 DEPLOY gro-kan-00017-zph | Úspešne nasadená nová produkčná revízia gro-kan-00017-zph na Cloud Run (100% traffic, europe-west3). Obsahuje všetky najnovšie opravy (EUR/CZK switch IDs, pixel-perfect výpis s desatinnou čiarkou v sume, optimalizácie preloadu). Overený kompletný env výpis (ACCESS_FLOW_ENABLED=true) a 10/10 testov živej produkcie. | `gcloud run services describe -> gro-kan-00017-zph (100% traffic, Ready ✅), verify-prod-live.ts (10/10 pass 100%), curl /api/health -> 200 OK` |
 | 2026-10-14 | 🟢 STAV PREVODU & DEPLOY gro-kan-00018-sq8 | Zmena zobrazenia stavu z anglického 'completed' na 'Spracovaná' a automatický dynamický prechod po 30s na 'Doručená v banke príjemcu' (zelené písmo), 28/28 unit a regresných testov PASS, nasadená nová produkčná revízia gro-kan-00018-sq8 na Cloud Run (100% traffic, europe-west3). Overený kompletný env výpis (ACCESS_FLOW_ENABLED=true) a 10/10 testov živej produkcie. | `gcloud run services describe -> gro-kan-00018-sq8 (100% traffic, Ready ✅), verify-prod-live.ts (10/10 pass 100%), curl /api/health -> 200 OK` |
 | 2026-10-14 | 🤖 OSOBNÝ BANKÁR & CHAT | Integrácia osobného bankára Ing. Zdenka Biringera (SLSP) s transparentným portrétom, 1:1 oficiálnym SLSP chat widgetom, 9 interaktívnymi otázkami, Mistral AI s MISTRAL_API_KEY v Secret Manager a povolením /api/chat v proxy.ts | `npm run test:all (30/30 pass 100%), verify-prod-live.ts (11/11 pass 100%), gcloud run services describe -> gro-kan-00021 Ready ✅` |
+| 2026-10-15 | 📄 ZDENKO CHAT: VÝBER Z 10 PDF DOKLADOV & TESTY | Pridaný interaktívny výber z posledných 10 vygenerovaných PDF dokladov odchádzajúcich platieb do karty overenia u bankára Zdenka. Vytvorená nová komplexná testovacia sada `banker-pdf-verification.test.ts` (unit, integrity, regresná, API) zapojená do celkového bežca testov. | `npm run test:all (32/32 pass 100%), ESLint 0 errors, tsc 0 chýb` |
 
 ---
 
@@ -409,12 +410,12 @@
 >
 > **🔒 Bezpečnosť:** Všade aplikované best practices (secrets v SM, IAM role, V4 signed URLs, Stealth White Cloak, CONTRACT-1+1 zámok)
 >
-> **✅ Kvalita:** Unit testy 100% PASS (27/27), TypeScript 0 chýb, ESLint 0 errors, 0 warnings, Build úspešný
+> **✅ Kvalita:** Unit testy 100% PASS (32/32), TypeScript 0 chýb, ESLint 0 errors, 0 warnings, Build úspešný
 >
 > **🌐 Produkčná URL:** https://gro-kan-1040062317673.europe-west3.run.app
 
 ---
 
-*Dokument založený: 2025 | Správca: grok (u0352652320@gmail.com) | Posledná úprava: 2026-10-13*
+*Dokument založený: 2025 | Správca: grok (u0352652320@gmail.com) | Posledná úprava: 2026-10-15*
 
 
